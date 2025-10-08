@@ -4,4 +4,4 @@
 Implementation of cost-aware bayesian optimization method for hyperparameter optimization
 
 
-Created by @yungtoby
+Created by Tobias Husebø [Github](https://github.com/yungtoby)
