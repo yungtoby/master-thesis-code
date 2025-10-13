@@ -1,3 +1,6 @@
+##################################
+# TEST FOR BAYESIAN OPTIMIZATION #
+##################################
 def test_BO():
     import gpytorch as gpy 
     import torch as t
