@@ -1,6 +1,8 @@
 import torch as t
 from itertools import product
 
+
+
 class CandidateSet:
     '''Candidate set to perform optimization over.'''
     def __init__(self, device, dtype, res, D, minimum, maximum):
@@ -15,9 +17,12 @@ class CandidateSet:
         self.maximum = maximum  # Maximum (i.e, end of resolution)
 
         # Initialize uniformally
-        self.grid = self.uniform_grid()
+        self.grid = self.create_uniform_grid()
 
-    def uniform_grid(self):
+
+    def create_uniform_grid(self):
+        '''Function for creating the grid'''
+        
         if not isinstance(self.res, int) or self.res <= 0:
             raise ValueError('resolution must be a positive integer')
 
@@ -31,6 +36,7 @@ class CandidateSet:
         # Reshape to correct shape
         grid = mesh.reshape(-1, self.D)  # shape (K, D)
         return grid
+
 
     def get_grid(self):
         return self.grid

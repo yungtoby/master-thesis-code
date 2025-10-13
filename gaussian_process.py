@@ -17,28 +17,44 @@ class GaussianProcess(gpy.models.ExactGP):
 
 
 class GPWrapper:
-    def __init__(self, train_x, train_y, likelihood, mean_module, covar_module, optimizer_and_lr, training_iter):
-        self.train_x = train_x
-        self.train_y = train_y
+    '''Gaussian Process wrapper for utilizing GPYTorch's ExactGP implementation.'''
+    def __init__(self, device, dtype, train_x, train_y, likelihood, mean_module, covar_module, optimizer_and_lr, training_iter):
+        # Initializing device and dtype
+        self.device = t.device(device)
+        self.dtype = dtype
 
-        self.likelihood = likelihood
+        # Initializing training data and moving to device + reshaping y to 1D
+        self.train_x = train_x.to(device = self.device, dtype = self.dtype).continguous()
+        self.train_y = train_y.to(device = self.device, dtype = self.dtype).continguous().view(-1)
+
+        # Initialize likelihood, mean and covar (dont move mean and covar as the get moved with model)
+        self.likelihood = likelihood.to(device = self.device)
         self.mean_module = mean_module
         self.covar_module = covar_module
 
+        # Initialize the GP
         self.GP = GaussianProcess(
             train_x=self.train_x,
             train_y=self.train_y, 
             likelihood=self.likelihood,
             mean_module=self.mean_module,
             covar_module=self.covar_module
-            )
+            ).to(device = self.device)
         
+        # Initialize optimizer and number of training iterations
         optimizer_class, self.lr = optimizer_and_lr
         self.optimizer = optimizer_class(self.GP.parameters(), self.lr)
         self.training_iter = training_iter
         
 
+    # NOTE: Might become a bottleneck, need to rethink..
     def add_data(self, x_new, y_new):
+        '''Append new data to the GP'''
+
+        # Move new points to device
+        x_new = x_new.to(self.device, dtype=self.dtype).contiguous().view(-1, self.train_x.shape[-1])
+        y_new = y_new.to(self.device, dtype=self.dtype).contiguous().view(-1)
+
         # Update stored data
         self.train_x = t.cat([self.train_x, x_new])
         self.train_y = t.cat([self.train_y, y_new])
@@ -48,6 +64,7 @@ class GPWrapper:
 
 
     def train(self, verbose=False):
+        '''Train the GP on current training data'''
         # Set GP and likelihood to training mode:
         self.GP.train()
         self.likelihood.train()
@@ -77,6 +94,10 @@ class GPWrapper:
 
 
     def predict(self, x):
+        '''Predict on newly seen data'''
+        # Move to device
+        x = x.to(self.device, dtype=self.dtype).contiguous()
+
         # Get into evaluation (predictive posterior) mode
         self.GP.eval()
         self.likelihood.eval()
@@ -85,3 +106,18 @@ class GPWrapper:
         # Make predictions by feeding model through likelihood
         with t.no_grad(), gpy.settings.fast_pred_var():
             return self.likelihood(self.GP(x))
+
+
+
+
+    # NOTE: SHOULD NOT BE NECESSARY AFTER INIT!    
+    def to(self, device):
+        """Move internal tensors and modules to a new device."""
+        self.device = t.device(device)
+        self.train_x = self.train_x.to(self.device)
+        self.train_y = self.train_y.to(self.device)
+        self.GP = self.GP.to(self.device)
+        self.likelihood = self.likelihood.to(self.device)
+        # Recreate optimizer to point to new parameters (optimizer state isn't transferred cleanly)
+        optimizer_class = type(self.optimizer)
+        self.optimizer = optimizer_class(self.GP.parameters(), lr=self.lr)
