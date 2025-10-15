@@ -4,5 +4,6 @@ from tests.gp_wrapper_test import test_GP, test_GP_refit, test_GP_GPU
 from tests.candidate_set_test import candidate_set_test_GPU
 
 if __name__ == '__main__':
-    test_BO()
-    test_BO_GPU()
+    for i in range(100, 401, 100):
+        #test_BO(i)
+        test_BO_GPU(i)

@@ -1,7 +1,7 @@
 ##################################
 # TEST FOR BAYESIAN OPTIMIZATION #
 ##################################
-def test_BO():
+def test_BO(num_steps):
     import gpytorch as gpy 
     import torch as t
     import time
@@ -24,7 +24,7 @@ def test_BO():
     can_set = CandidateSet(device, dtype, 100, 1, 0, 10)
     bb_func = BlackBoxFunc(sin_func)
     budget = 5
-    num_steps = 205
+    #num_steps = 25
 
     # Initialize model params and model 
     mean_module = gpy.means.ConstantMean()
@@ -50,7 +50,7 @@ def test_BO():
 #########################################
 # TEST FOR BAYESIAN OPTIMIZATION ON GPU #
 #########################################
-def test_BO_GPU():
+def test_BO_GPU(num_steps):
     import gpytorch as gpy 
     import torch as t
     import time
@@ -62,13 +62,16 @@ def test_BO_GPU():
     from acquistion_function import EI
     from bayesian_optimization import BO_Pipeline
 
-    print('\n\nINITIALIZING BO PIPELINE ON GPU')
+    print('\n\nINITIALIZING BO PIPELINE ON GPU\n\n--------------------------------')
 
     # Torch params
     if t.mps.is_available():
         device = t.device('mps')
     elif t.cuda.is_available():
         device = t.device('cuda')
+    else:
+        print("NO GPU AVAILABLE!")
+        return
     dtype = t.float32
 
     print(f"Using device: {device}")
@@ -78,7 +81,7 @@ def test_BO_GPU():
     can_set = CandidateSet(device, dtype, 100, 1, 0, 10)
     bb_func = BlackBoxFunc(sin_func)
     budget = 5
-    num_steps = 205
+    #num_steps = 25
 
     # Assert candidate grid on correct device
     grid = can_set.get_grid()
@@ -106,7 +109,13 @@ def test_BO_GPU():
     
     # Run BO
     start_time = time.time()
+
     best_x, best_y = pipeline.run_BO(num_steps)
+
+    # NOTE: UNCOMMENT TO GET TRACE OF OPERATIONS!
+    #with t.profiler.profile(activities=[t.profiler.ProfilerActivity.CPU, t.profiler.ProfilerActivity.CUDA]) as prof:
+    #    best_x, best_y = pipeline.run_BO(num_steps)
+    #prof.export_chrome_trace("cuda_trace.json")
     end_time = time.time()
 
     # Assert outputs on GPU
