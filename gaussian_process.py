@@ -24,8 +24,8 @@ class GPWrapper:
         self.dtype = dtype
 
         # Initializing training data and moving to device + reshaping y to 1D
-        self.train_x = train_x.to(device = self.device, dtype = self.dtype).continguous()
-        self.train_y = train_y.to(device = self.device, dtype = self.dtype).continguous().view(-1)
+        self.train_x = train_x.to(device = self.device, dtype = self.dtype).contiguous()
+        self.train_y = train_y.to(device = self.device, dtype = self.dtype).contiguous().view(-1)
 
         # Initialize likelihood, mean and covar (dont move mean and covar as the get moved with model)
         self.likelihood = likelihood.to(device = self.device)

@@ -48,9 +48,9 @@ def test_GP():
         plt.show()
 
 
-#####################################
-# TEST FOR GAUSSIAN PROCESS WRAPPER #
-#####################################
+###########################################
+# TEST FOR GAUSSIAN PROCESS WRAPPER REFIT #
+###########################################
 def test_GP_refit():
     from gaussian_process import GPWrapper
     import gpytorch as gpy
@@ -124,3 +124,63 @@ def test_GP_refit():
         ax.set_ylim([-5, 5])
         ax.legend(['Observed Data', 'Mean', 'Confidence'])
         plt.show()
+
+
+
+###########################################
+# TEST FOR GAUSSIAN PROCESS WRAPPER (GPU) #
+###########################################
+def test_GP_GPU():
+    import torch as t
+    import gpytorch as gpy
+    from functions.blackbox_function import BlackBoxFunc
+    from functions.own_functions import weird_func_2
+    from candidate_set import CandidateSet
+    from gaussian_process import GPWrapper
+
+
+    # Initalize device:
+    if t.mps.is_available():
+        device = t.device('mps')
+    elif t.cuda.is_available():
+        device = t.device('cuda')
+    dtype = t.float32
+
+    # Initialize grid and blackbox func:
+    c_set = CandidateSet(device=device, dtype=dtype, res=30, D=1, minimum=0.0, maximum=6.28)
+    grid = c_set.get_grid() 
+    bb_func = BlackBoxFunc(weird_func_2)
+
+    init_inds = t.randperm(grid.shape[0], device=device)[:6]
+    train_x = grid[init_inds].clone()
+    train_y = bb_func.evaluate(train_x)
+
+    # Initialize GP components:
+    likelihood = gpy.likelihoods.GaussianLikelihood().to(device)
+    mean_module = gpy.means.ConstantMean()
+    covar_module = gpy.kernels.ScaleKernel(gpy.kernels.RBFKernel())
+
+    # Initialize GP Wrapper:
+    gpw = GPWrapper(
+        device=device,
+        dtype=dtype,
+        train_x=train_x,
+        train_y=train_y,
+        likelihood=likelihood,
+        mean_module=mean_module,
+        covar_module=covar_module,
+        optimizer_and_lr=(t.optim.Adam, 0.1),
+        training_iter=30
+    )
+
+    # Try to train the GP Wrapper
+    gpw.train(verbose=False)
+    observed_pred = gpw.predict(grid)
+
+    means = observed_pred.mean
+    stds = observed_pred.stddev
+
+    # Check for device mismatches:
+    print(f'Current means device: {means.device.type} stds device: {stds.device.type}')
+    assert means.device.type == device.type and stds.device.type == device.type
+    print(f'\nGP Wrapper object created, fit and inferred succesfully!\nRunning on device: {gpw.device}')
