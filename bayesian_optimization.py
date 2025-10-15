@@ -3,12 +3,18 @@ import matplotlib.pyplot as plt
 
 
 class BO_Pipeline:
-    def __init__(self, cost_budget, surrogate_model, acq_function, candidate_set, blackbox_func):
+    def __init__(self, device, dtype, cost_budget, surrogate_model, acq_function, candidate_set, blackbox_func):
+        # Initialize device and dtype
+        self.device = t.device(device)
+        self.dtype = dtype
+
+        # Initialize BO params
         self.cost_budget = cost_budget
         self.surrogate_model = surrogate_model
         self.acq_function = acq_function
         self.candidate_set = candidate_set
         self.blackbox_func = blackbox_func
+
 
     def run_BO(self, num_steps):
         init_best_ind = t.argmax(self.surrogate_model.train_y)
@@ -18,17 +24,14 @@ class BO_Pipeline:
         grid = self.candidate_set.get_grid()
         self.surrogate_model.train()
 
-        for step in range(num_steps):
-
-            # if 1 dimensional:
-            #self._visualize_BO_1D(grid, (step+1))
+        for _ in range(num_steps):
             
-            x_next_ind = t.argmax(self.acq_function.compute(self.surrogate_model, self.candidate_set.get_grid()))
+            x_next_ind = t.argmax(self.acq_function.compute(self.surrogate_model, grid))
             x_next = grid[x_next_ind]
             y_next = self.blackbox_func.evaluate(x_next)
 
-            # Maybe change to func if want to try min
-            if y_next > best_found_y:
+            # NOTE: For safe comparison, in case of shape mismatch
+            if (y_next > best_found_y).any():
                 best_found_y = y_next
                 best_found_x = x_next
 
@@ -38,6 +41,26 @@ class BO_Pipeline:
         return best_found_x, best_found_y
     
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    ##########
+    # UNUSED #
+    ##########
     def _visualize_BO_1D(self, x_s, iter_count):
         with t.no_grad():
             f, ax = plt.subplots(1, 1, figsize=(14, 7))

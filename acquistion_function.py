@@ -23,7 +23,7 @@ class EI(AcquisitionFunction):
         std = posterior.stddev
 
         # NOTE: Might be slow, consider precomputing best_y and saving in surrogate model.
-        best_y = surrogate_model.train_y.max().item()
+        best_y = surrogate_model.train_y.max()
 
         # Compute EI
         with t.no_grad():
