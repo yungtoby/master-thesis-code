@@ -35,7 +35,7 @@ class EI(AcquisitionFunction):
             pdf = normal.log_prob(z).exp()
             cdf = normal.cdf(z)
 
-            expected_imp = (mean - best_y - self.epsilon) * cdf + std * pdf
+            expected_imp = (mean - best_y - self.epsilon) * cdf + std_safe * pdf
         
         return expected_imp
 

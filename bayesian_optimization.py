@@ -25,10 +25,19 @@ class BO_Pipeline:
         self.surrogate_model.train()
 
         for _ in range(num_steps):
+            # Retrieve scores
+            scores = self.acq_function.compute(self.surrogate_model, grid)
+
+            # Set already visited x_s to -inf
+            scores = scores.masked_fill(self.candidate_set.get_mask(), -t.inf)
             
-            x_next_ind = t.argmax(self.acq_function.compute(self.surrogate_model, grid))
+            # pick new x_next and evaluate y_next
+            x_next_ind = t.argmax(scores)
             x_next = grid[x_next_ind]
             y_next = self.blackbox_func.evaluate(x_next)
+
+            # Mark chosen candidate as used
+            self.candidate_set.mark_as_visited(x_next_ind)
 
             # NOTE: For safe comparison, in case of shape mismatch
             if (y_next > best_found_y).any():

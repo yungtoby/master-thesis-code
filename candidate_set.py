@@ -18,6 +18,7 @@ class CandidateSet:
 
         # Initialize uniformally
         self.grid = self.create_uniform_grid()
+        self.used_mask = t.zeros(self.K, dtype=t.bool, device=self.device)
 
 
     def create_uniform_grid(self):
@@ -36,7 +37,13 @@ class CandidateSet:
         # Reshape to correct shape
         grid = mesh.reshape(-1, self.D)  # shape (K, D)
         return grid
+    
+    
+    def mark_as_visited(self, idx):
+        self.used_mask[idx] = True
 
+    def get_mask(self):
+        return self.used_mask
 
     def get_grid(self):
         return self.grid
