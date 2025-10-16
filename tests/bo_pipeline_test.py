@@ -1,7 +1,7 @@
 ##################################
 # TEST FOR BAYESIAN OPTIMIZATION #
 ##################################
-def test_BO(num_steps):
+def test_BO(num_steps, num_training_iter):
     import gpytorch as gpy 
     import torch as t
     import time
@@ -13,18 +13,21 @@ def test_BO(num_steps):
     from acquistion_function import EI
     from bayesian_optimization import BO_Pipeline
     
-    print('\n\nINITIALIZING BO PIPELINE ON CPU')
+
+    print('\n\nINITIALIZING BO PIPELINE ON CPU\n\n--------------------------------')
+    
     
     # Device and dtype
     device = t.device('cpu')
     dtype = t.float32
+
 
     # Initialize Acquistion function, candidate set and blackbox function 
     acq_func = EI()
     can_set = CandidateSet(device, dtype, 100, 1, 0, 10)
     bb_func = BlackBoxFunc(sin_func)
     budget = 5
-    #num_steps = 25
+
 
     # Initialize model params and model 
     mean_module = gpy.means.ConstantMean()
@@ -33,9 +36,10 @@ def test_BO(num_steps):
     train_x = t.linspace(0, 10, 5).unsqueeze(-1)
     train_y = bb_func.evaluate(train_x).squeeze(-1)
     optimizer = (t.optim.Adam, 0.1)
-    training_iter = 50
+    training_iter = 10
     surr_model = GPWrapper(device, dtype, train_x, train_y, likelihood, mean_module, covar_module, optimizer, training_iter)
     
+
     # Initialize pipeline:
     pipeline = BO_Pipeline(device, dtype, budget, surr_model, acq_func, can_set, bb_func)
     start_time = time.time()
@@ -50,7 +54,7 @@ def test_BO(num_steps):
 #########################################
 # TEST FOR BAYESIAN OPTIMIZATION ON GPU #
 #########################################
-def test_BO_GPU(num_steps):
+def test_BO_GPU(num_steps, num_training_iter):
     import gpytorch as gpy 
     import torch as t
     import time
@@ -62,7 +66,9 @@ def test_BO_GPU(num_steps):
     from acquistion_function import EI
     from bayesian_optimization import BO_Pipeline
 
+
     print('\n\nINITIALIZING BO PIPELINE ON GPU\n\n--------------------------------')
+
 
     # Torch params
     if t.mps.is_available():
@@ -81,7 +87,6 @@ def test_BO_GPU(num_steps):
     can_set = CandidateSet(device, dtype, 100, 1, 0, 10)
     bb_func = BlackBoxFunc(sin_func)
     budget = 5
-    #num_steps = 25
 
     # Assert candidate grid on correct device
     grid = can_set.get_grid()
@@ -96,7 +101,7 @@ def test_BO_GPU(num_steps):
     train_x = t.linspace(0, 10, 5, device=device, dtype=dtype).unsqueeze(-1)
     train_y = bb_func.evaluate(train_x).squeeze(-1)
     optimizer = (t.optim.Adam, 0.1)
-    training_iter = 50
+    training_iter = num_training_iter
     surr_model = GPWrapper(device, dtype, train_x, train_y, likelihood, mean_module, covar_module, optimizer, training_iter)
     
     # Assert surrogate on GPU
