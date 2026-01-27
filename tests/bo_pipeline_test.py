@@ -36,7 +36,7 @@ def test_BO(num_steps, num_training_iter):
     train_x = t.linspace(0, 10, 5).unsqueeze(-1)
     train_y = bb_func.evaluate(train_x).squeeze(-1)
     optimizer = (t.optim.Adam, 0.1)
-    training_iter = 10
+    training_iter = num_training_iter
     surr_model = GPWrapper(device, dtype, train_x, train_y, likelihood, mean_module, covar_module, optimizer, training_iter)
     
 
