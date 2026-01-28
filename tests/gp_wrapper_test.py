@@ -22,7 +22,7 @@ def test_GP():
     training_iter = 50
 
     # Initialize model
-    model = GPWrapper(train_x, train_y, likelihood, mean_module, covar_module, optimizer, training_iter)
+    model = GPWrapper(t.device('cpu'), t.float32, train_x, train_y, likelihood, mean_module, covar_module, optimizer, training_iter)
 
     # Train model
     model.train(verbose=True)
@@ -64,7 +64,7 @@ def test_GP_refit():
     likelihood = gpy.likelihoods.GaussianLikelihood()
 
     # Initizlie training data
-    train_x = t.linspace(0, 1, 10)
+    train_x = t.linspace(0, 1, 10).unsqueeze(-1)
     train_y = (t.sin((2*t.pi)*train_x) * train_x) + (t.randn(train_x.size()) * t.sqrt(t.tensor(0.04)))
 
     # Initialize optimizer
@@ -72,7 +72,7 @@ def test_GP_refit():
     training_iter = 50
 
     # Initialize model
-    model = GPWrapper(train_x, train_y, likelihood, mean_module, covar_module, optimizer, training_iter)
+    model = GPWrapper(t.device('cpu'), t.float32, train_x, train_y, likelihood, mean_module, covar_module, optimizer, training_iter)
 
     # Train model
     model.train(verbose=True)
@@ -99,7 +99,7 @@ def test_GP_refit():
     
 
     # Newly aquiried training point
-    train_x_new = t.linspace(1, 2, 100)
+    train_x_new = t.linspace(1, 2, 100).unsqueeze(-1)
     train_y_new = (t.cos((2*t.pi)*train_x_new) * train_x_new) + (t.randn(train_x_new.size()) * t.sqrt(t.tensor(0.04)))
 
     train_x = t.cat([train_x, train_x_new])

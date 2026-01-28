@@ -10,7 +10,7 @@ def test_BO(num_steps, num_training_iter):
     from candidate_set import CandidateSet 
     from functions.blackbox_function import BlackBoxFunc
     from functions.own_functions import sin_func
-    from acquistion_function import EI
+    from acquisition_function import EI
     from bayesian_optimization import BO_Pipeline
     
 
@@ -63,7 +63,7 @@ def test_BO_GPU(num_steps, num_training_iter):
     from candidate_set import CandidateSet 
     from functions.blackbox_function import BlackBoxFunc
     from functions.own_functions import sin_func
-    from acquistion_function import EI
+    from acquisition_function import EI
     from bayesian_optimization import BO_Pipeline
 
 
