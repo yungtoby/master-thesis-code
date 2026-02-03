@@ -96,7 +96,7 @@ class GPWrapper:
     def predict(self, x):
         '''Predict on newly seen data'''
         # Move to device
-        x = x.to(self.device, dtype=self.dtype).contiguous()
+        x = x.to(self.device, dtype=self.dtype).contiguous() #TODO: Maybe not move as it should be tensor already
 
         # Get into evaluation (predictive posterior) mode
         self.GP.eval()

@@ -1,5 +1,6 @@
 #########################################################################################################################
 # THE FOLLOWING CODE (LINE 5 - 316) IS FROM CLEANRL. URL: https://github.com/vwxyzjn/cleanrl/blob/master/cleanrl/ppo.py #
+# DISCLAIMER: MINOR CHANGES HAS BEEN MADE TO FIT THESIS PROJECT.                                                        #
 #########################################################################################################################
 
 # docs and experiment results can be found at https://docs.cleanrl.dev/rl-algorithms/ppo/#ppopy
