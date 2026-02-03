@@ -5,44 +5,46 @@ import torch as t
 
 class BOEnv(gym.Env):
     '''Gymansium environment for one BO episode.'''
-    def __init__(self, candidate_generator, gp_factory, objective_fn, n_candidates=50, budget=1.0, reward_type="final_neglog_regret"):
+    def __init__(self, candidate_factory, gp_factory, objective_fn, n_candidates=50, budget=1.0, reward_type="final_neglog_regret"):
         super().__init__()
         # Environment specifics
         self.n_candidates = n_candidates
         self.budget = budget
         self.remaining_budget = budget
         self.reward_type = reward_type                 # "final_neglog_regret" as in paper
-        self.candidate_generator = candidate_generator # candidate_generator: callable -> returns (X: np.array (N,D), costs: np.array (N,))
+        self.candidate_factory = candidate_factory     # candidate_factory: callable -> returns (X: np.array (N,D), costs: np.array (N,))
         self.gp_factory = gp_factory                   # callable to create a GPWrapper instance (one per env)
-        self.objective_fn = objective_fn               # TODO: callable for evaluating true objective (Blackbox func???)
+        self.objective_fn = objective_fn               # callable for evaluating true objective
 
         # RL specifics
         observation_dim = 3 * n_candidates + 2         # (mean, std, and cost for each candidate) + remaining budget and best found solution so far
         self.observation_space = gym.spaces.Box(low=-t.inf, high=t.inf, shape=(observation_dim,), dtype=t.float32)
         self.action_space = gym.spaces.Discrete(n_candidates)
 
-        self._reset_episode_state() # Start (or restart) environment
+        self.reset() # Start (or restart) environment
 
 
-    def _reset_episode_state(self):
-        '''Reset the environment'''
-        self.X, self.costs = self.candidate_generator(self.n_candidates)   # TODO: generate candidate set and costs (need to make candidate generator)
-        self.gp = self.gp_factory()                                        # TODO: create fresh GP for this episode (how should we init??)
 
-        self.train_history = []                                            # list of indices chosen by agent
-        self.best_value = -t.inf                                           # (-infinity if maximizing, else infinity)
-        self.remaining_budget = self.budget
-        self.done = False
-
-        # compute initial mu, sigma
-        mu, sigma = self._gp_predict_on_candidates()
-        return self._build_obs(mu, sigma)
 
 
     # SHOULD RETURN TUPLE[Observation(ObsType), info(dict)]
     def reset(self):
-        '''Public function calling the reset_episode_state to reset the environment'''
-        return self._reset_episode_state()
+        '''Reset the environment'''
+        self.X, self.costs = self.candidate_factory(self.n_candidates)     
+        self.gp = self.gp_factory()                                       
+
+        self.train_history = []                # list of indices chosen by agent
+        self.best_value = -t.inf               # (-infinity if maximizing, else infinity)
+        self.remaining_budget = self.budget
+        self.terminated = False
+        self.truncated = False
+
+        # compute initial mu, sigma
+        mu, sigma = self._gp_predict_on_candidates()
+        return (self._build_obs(mu, sigma), {})
+
+
+
 
 
     def _gp_predict_on_candidates(self):
@@ -57,7 +59,7 @@ class BOEnv(gym.Env):
     def _build_obs(self, mu, sigma):
         # Normalize mu, sigma, costs, budget, best. Use utils/normalization functions.
         # Here we just concat raw values; recommended to scale them later.
-        obs = t.concatenate([mu, sigma, self.costs, t.Tensor([self.remaining_budget / self.budget]), t.Tensor([self.best_value])]) # TODO: might change dimensionality
+        obs = t.concatenate([mu, sigma, self.costs, t.Tensor([self.remaining_budget]), t.Tensor([self.best_value])]) # TODO: might change dimensionality
         return obs.astype(t.float32) # TODO: is this needed? Should already be float32 i think
 
 
@@ -112,7 +114,7 @@ class BOEnv(gym.Env):
     ########################
     # UNUSED FUNCTIONALITY #
     ########################
-    
+
     def render(self, mode="human"):
         pass
 
