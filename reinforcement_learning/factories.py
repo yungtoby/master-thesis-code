@@ -6,7 +6,6 @@ from functions.own_functions import weird_func
 
 class GPFactory:
     '''Callable factory that creates independent GPWrapper instance'''
-
     def __init__(self, device: str = "cpu", dtype = t.float32, **kwargs):
         self.device = device
         self.dtype = dtype
@@ -24,7 +23,6 @@ class GPFactory:
 
 class CandidateFactory:
     '''Callable factory that creates independent CandidateSet instance'''
-
     def __init__(self, device: str = "cpu", dtype = t.float32, **kwargs):
         self.device = device
         self.dtype = dtype
@@ -41,4 +39,4 @@ class CandidateFactory:
         # TODO: Fix costs, now just random between 1 and 101.
         costs = t.randint(1, 101, (num_candidates,))
 
-        return c_set, costs
+        return c_set.get_grid(), costs
