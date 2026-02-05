@@ -18,6 +18,7 @@ class CandidateSet:
 
         # Initialize uniformally
         self.grid = self.create_uniform_grid()
+        self.cost_grid = self.create_cost_grid()
         self.used_mask = t.zeros(self.K, dtype=t.bool, device=self.device)
 
 
@@ -38,6 +39,19 @@ class CandidateSet:
         grid = mesh.reshape(-1, self.D)  # shape (K, D)
         return grid
     
+
+    def create_cost_grid(self):
+        '''Function for creating costs of the grid'''
+        cost_grid = t.randint(
+            low=1,
+            high=101,
+            size=(self.K,),
+            device=self.device,
+            dtype=t.int64
+        )
+
+        return cost_grid.to(dtype=t.float32)
+    
     
     def mark_as_visited(self, idx):
         self.used_mask[idx] = True
@@ -47,3 +61,6 @@ class CandidateSet:
 
     def get_grid(self):
         return self.grid
+    
+    def get_cost_grid(self):
+        return self.cost_grid

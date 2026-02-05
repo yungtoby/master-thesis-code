@@ -7,7 +7,7 @@ import gpytorch as gpy
 
 class BOEnv(gym.Env):
     '''Gymansium environment for one BO episode.'''
-    def __init__(self, device, dtype, candidate_factory, gp_factory, objective_fn, n_candidates=50, n_init=3, budget=1.0, reward_type="final_neglog_regret"):
+    def __init__(self, device, dtype, candidate_factory, gp_factory, objective_fn, n_candidates=100, n_init=3, budget=500, reward_type="final_neglog_regret"):
         super().__init__()
         # Device and dtype
         self.device = t.device(device)
@@ -15,16 +15,16 @@ class BOEnv(gym.Env):
 
         # Environment specifics
         self.n_candidates = n_candidates
-        self.n_init = n_init                           # init indices for GP to be trained on
+        self.n_init = n_init
         self.budget = budget
         self.remaining_budget = budget
-        self.reward_type = reward_type                 # "final_neglog_regret" as in paper
-        self.candidate_factory = candidate_factory     # candidate_factory: callable -> returns (X: np.array (N,D), costs: np.array (N,))
-        self.gp_factory = gp_factory                   # callable to create a GPWrapper instance (one per env)
-        self.objective_fn = objective_fn               # callable for evaluating true objective
+        self.reward_type = reward_type 
+        self.candidate_factory = candidate_factory(device, dtype)
+        self.gp_factory = gp_factory(device, dtype)
+        self.objective_fn = objective_fn
 
         # RL specifics (observation and action space)
-        observation_dim = 3 * n_candidates + 2         # (mean, std, and cost for each candidate) + remaining budget and best found solution so far
+        observation_dim = 3 * n_candidates + 2  # (mean, std, and cost for each candidate) + remaining budget and best found solution so far
         self.observation_space = gym.spaces.Box(low=-np.inf, high=np.inf, shape=(observation_dim,), dtype=np.float32)
         self.action_space = gym.spaces.Discrete(n_candidates)
 
@@ -40,11 +40,11 @@ class BOEnv(gym.Env):
         self.reset() # Start (or restart) environment
 
 
-    def reset(self, seed):
+    def reset(self, seed=None, options=None):
         '''Reset the environment'''
         super().reset(seed=seed)
         # Initialize Candidate set, costs and gaussian process
-        self.X, self.costs = self.candidate_factory(self.n_candidates)     
+        self.X, self.costs = self._initialize_candidate_factory()     
         self.gp = self._initialize_gp()        
         self.gp.train()                               
 
@@ -60,11 +60,27 @@ class BOEnv(gym.Env):
         obs = self._build_obs(mu, sigma)
 
         return obs, {}
+    
 
-    #self, device, dtype, train_x, train_y, likelihood, mean_module, covar_module, optimizer_and_lr, training_iter)
+    def _initialize_candidate_factory(self):
+        # Placeholder, need to implement better solution
+        kwargs = {
+            'res' : 100,
+            'D' : 1,
+            'minimum' : 0,
+            'maximum' : 10
+        }
+
+        self.X, self.costs = self.candidate_factory(**kwargs)
+        return self.X, self.costs     
+
+
     def _initialize_gp(self):
         # init points, need to implement better solution
-        train_x = t.as_tensor(np.random.choice(self.X, size=self.n_init, replace=False), dtype=t.float32, device=self.device).unsqueeze(-1)
+        K = self.X.shape[0]
+        idx = self.np_random.choice(K, size=self.n_init, replace=False)  # uses Gym's seeded RNG
+        train_x = self.X[idx].to(self.device, self.dtype)  
+        
 
         # Placeholder, need to implement better solution
         kwargs = {
@@ -77,7 +93,7 @@ class BOEnv(gym.Env):
             'training_iter' : 10
         }
 
-        return self.gp_factory(self.device, self.dtype, kwargs)
+        return self.gp_factory(**kwargs)
 
 
     def _gp_predict_on_candidates(self):
