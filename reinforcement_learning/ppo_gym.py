@@ -24,7 +24,7 @@ print(f'NAME: --- {os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}'
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 #My imports
-from reinforcement_learning.envs.BO_env import BOEnv
+from reinforcement_learning.envs.BO_gym_env import BOEnv
 from reinforcement_learning.factories import GPFactory, CandidateFactory
 from functions.blackbox_function import BlackBoxFunc
 from functions.own_functions import not_too_easy_unique_opt
@@ -52,17 +52,17 @@ class Args:
     # Algorithm specific arguments
     env_id: str = "RL-BO-v0.1"
     """the id of the environment"""
-    total_timesteps: int = 10000
+    total_timesteps: int = 10000 #TODO: UP THE COUNT
     """total timesteps of the experiments"""
-    learning_rate: float = 2.5e-4
+    learning_rate: float = 1e-4
     """the learning rate of the optimizer"""
-    num_envs: int = 1 #TODO: UP NUMBER OF PARALLEL 
+    num_envs: int = 4 #TODO: UP NUMBER OF PARALLEL 
     """the number of parallel game environments"""
-    num_steps: int = 128
+    num_steps: int = 32
     """the number of steps to run in each environment per policy rollout"""
     anneal_lr: bool = True
     """Toggle learning rate annealing for policy and value networks"""
-    gamma: float = 0.99
+    gamma: float = 1
     """the discount factor gamma"""
     gae_lambda: float = 0.95
     """the lambda for the general advantage estimation"""
@@ -78,11 +78,11 @@ class Args:
     """Toggles whether or not to use a clipped loss for the value function, as per the paper."""
     ent_coef: float = 0.01
     """coefficient of the entropy"""
-    vf_coef: float = 0.5
+    vf_coef: float = 1
     """coefficient of the value function"""
     max_grad_norm: float = 0.5
     """the maximum norm for the gradient clipping"""
-    target_kl: float = None
+    target_kl: float = 0.3
     """the target KL divergence threshold"""
 
     # to be filled in runtime
@@ -106,7 +106,7 @@ def make_env():
             n_init=3,
             budget=500,
         )
-        env = gym.wrappers.RecordEpisodeStatistics(env)
+        #env = gym.wrappers.RecordEpisodeStatistics(env)
         return env
     return thunk
 
@@ -182,6 +182,8 @@ if __name__ == "__main__":
     envs = gym.vector.SyncVectorEnv(
         [make_env() for i in range(args.num_envs)],
     )
+    envs = gym.wrappers.vector.RecordEpisodeStatistics(envs)
+    
     assert isinstance(envs.single_action_space, gym.spaces.Discrete), "only discrete action space is supported"
 
     agent = Agent(envs).to(device)
@@ -226,13 +228,18 @@ if __name__ == "__main__":
             next_done = np.logical_or(terminations, truncations)
             rewards[step] = torch.tensor(reward).to(device).view(-1)
             next_obs, next_done = torch.Tensor(next_obs).to(device), torch.Tensor(next_done).to(device)
+            
+            if "episode" in infos:
+                ep = infos["episode"]          # dict with r, l, t arrays
+                done_mask = infos["_episode"]  # boolean array length num_envs
 
-            if "final_info" in infos:
-                for info in infos["final_info"]:
-                    if info and "episode" in info:
-                        print(f"global_step={global_step}, episodic_return={info['episode']['r']}")
-                        writer.add_scalar("charts/episodic_return", info["episode"]["r"], global_step)
-                        writer.add_scalar("charts/episodic_length", info["episode"]["l"], global_step)
+                for i, done in enumerate(done_mask):
+                    if done:
+                        print(f"global_step={global_step}, env={i}, episodic_return={ep['r'][i]}")
+                        writer.add_scalar("charts/episodic_return", ep["r"][i], global_step)
+                        writer.add_scalar("charts/episodic_length", ep["l"][i], global_step)
+                        writer.add_scalar("charts/episodic_time", ep["t"][i], global_step)
+
 
         # bootstrap value if not done
         with torch.no_grad():
@@ -327,6 +334,7 @@ if __name__ == "__main__":
         writer.add_scalar("losses/explained_variance", explained_var, global_step)
         print("SPS:", int(global_step / (time.time() - start_time)))
         writer.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
+
 
     envs.close()
     writer.close()
