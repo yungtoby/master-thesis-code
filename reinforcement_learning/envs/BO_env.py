@@ -33,11 +33,9 @@ class BOEnv(gym.Env):
         self.costs = None
         self.gp = None
         self.train_history = []
-        self.best_value = -np.inf
+        self.best_current_value = None
         self.terminated = False
         self.truncated = False
-
-        self.reset() # Start (or restart) environment
 
 
     def reset(self, seed=None, options=None):
@@ -50,16 +48,23 @@ class BOEnv(gym.Env):
 
         # Reset train history, best val and remaining budget
         self.train_history = []              
-        self.best_value = -np.inf             
-        self.remaining_budget = self.budget
+        self.remaining_budget = t.tensor(float(self.budget), device=self.device, dtype=self.dtype)
+        self.best_current_value = t.max(self.gp.train_y)
         self.terminated = False
         self.truncated = False
 
         # Compute initial mu, sigma and build observation
-        mu, sigma = self._gp_predict_on_candidates()
-        obs = self._build_obs(mu, sigma)
+        obs = self._build_obs(*self._gp_predict_on_candidates())
 
-        return obs, {}
+        # Convert to numpy as gym expects numpy
+        obs_np = obs.detach().cpu().numpy().astype(np.float32)
+
+        # TODO: DEBUG
+        if not np.isfinite(obs_np).all():
+            print("Obs has NaN/Inf!", obs_np)
+            raise RuntimeError("Non-finite obs")
+
+        return obs_np, {}
     
 
     def _initialize_candidate_factory(self):
@@ -78,8 +83,8 @@ class BOEnv(gym.Env):
     def _initialize_gp(self):
         # init points, need to implement better solution
         K = self.X.shape[0]
-        idx = self.np_random.choice(K, size=self.n_init, replace=False)  # uses Gym's seeded RNG
-        train_x = self.X[idx].to(self.device, self.dtype)  
+        idx = self.np_random.choice(K, size=self.n_init, replace=False)
+        train_x = self.X[idx]
         
 
         # Placeholder, need to implement better solution
@@ -98,73 +103,77 @@ class BOEnv(gym.Env):
 
     def _gp_predict_on_candidates(self):
         with t.no_grad():
-            pred = self.gp.predict(t.as_tensor(self.X, dtype=t.float32, device=self.device))  
+            pred = self.gp.predict(self.X)  
             mu = pred.mean.reshape(-1)      
             sigma = pred.stddev.reshape(-1)  
 
-        return np.array(mu), np.array(sigma)
+        return mu, sigma
 
 
     def _build_obs(self, mu, sigma):
         # Build observation based on paper
-        obs = np.concatenate(
-            [mu, sigma, self.costs, np.array([self.remaining_budget]), np.array([self.best_value])]
-        )
+        obs = t.concatenate([
+            mu,
+            sigma,
+            self.costs,
+            t.as_tensor(self.remaining_budget, device=self.device, dtype=self.dtype).view(1),
+            t.as_tensor(self.best_current_value, device=self.device, dtype=self.dtype).view(1)
+        ])
 
-        return obs.astype(np.float32)
+        return obs.to(dtype=t.float32)
 
 
     def step(self, action):
         # If step after termination or truncation, return zero reward.
-        if np.logical_or(self.terminated, self.truncated):
-            return self._build_obs(*self._gp_predict_on_candidates()), 0, self.terminated, self.truncated, {}
+        if self.terminated or self.truncated:
+            obs = self._build_obs(*self._gp_predict_on_candidates())
+            obs_np = obs.detach().cpu().numpy().astype(np.float32)
+
+            return obs_np, 0.0, self.terminated, self.truncated, {}
 
         # Get chosen candidate point and its cost
         idx = int(action)                                               
         x = self.X[idx:idx+1]
         cost = self.costs[idx]
 
+
         # Evaluate objective with candidate point
-        y = self.objective_fn(x)
+        y = self.objective_fn.evaluate(x).reshape(1)
+
 
         # Append new data to gp, train and update current best if better
-        self.gp.add_data(t.as_tensor(x, dtype=t.float32), t.as_tensor([y], dtype=t.float32))
+        self.gp.add_data(x, y)
         self.gp.train() # Might need to only train every k-steps?
 
-        if y > self.best_value:
-            self.best_value = y
 
-        # VAR HER FØR LEGETIME, LURER PÅ OM DET SKAL GÅ AN Å PLUKKE ET PUNKT SOM HAR KOSTNAD UTENFOR BUDJSETT. SKAL DETTE
-        # ISÅFALL VÆRE TRUNCATED ELLER TERMINATED?? (LENER MEST MOT TRUNCATED)
-
-        # Check wether the cost is outside the remaining budget
-        self.remaining_budget -= cost
+        self.best_current_value = t.maximum(self.best_current_value, y.squeeze())
+        self.remaining_budget = self.remaining_budget - cost
         if self.remaining_budget <= 0:
-            #unsure if it should be terminated or truncated
             self.terminated = True
+
 
         # Build new observation for Agent
         mu, sigma = self._gp_predict_on_candidates()
         obs = self._build_obs(mu, sigma)
+        obs_np = obs.detach().cpu().numpy().astype(np.float32)
+        
 
         # If terminated or truncated, calculate (reward type specified if we want to try others)
         reward = 0.0
         info = {}
-        if np.logical_or(self.terminated, self.truncated) and self.reward_type == "final_neglog_regret":
+        if self.terminated or self.truncated and self.reward_type == "final_neglog_regret":
             ground_truth = self._get_true_optimum_value()  # implement or pass in; else approximate by best of full objective
-            regret = ground_truth - self.best_value
+            regret = ground_truth - self.best_current_value
 
             # In case regret is equal to zero (should not this be min() instead of max())
-            sr = max(regret, 1e-12)
-            reward = -np.log(sr)
+            sr = t.clamp(regret, min=t.tensor(1e-12, device=self.device, dtype=self.dtype))
+            reward = float((-t.log(sr)).detach().cpu())
 
-        return obs, reward, self.terminated, self.truncated, info
-    
+        return obs_np, reward, self.terminated, self.truncated, info
+
+
     def _get_true_optimum_value(self):
-        # If you can compute ground truth optimum on known objective, return it.
-        # fallback: maximum value across full candidate set evaluation of objective_fn
-        vals = [float(self.objective_fn(x.reshape(1, -1))) for x in self.X]
-        return max(vals)
+        return self.objective_fn.get_optimal_value()
     
 
     ########################

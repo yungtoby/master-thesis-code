@@ -18,6 +18,17 @@ import tyro
 from torch.distributions.categorical import Categorical
 from torch.utils.tensorboard import SummaryWriter
 
+#FIXME: quick fix for imports
+import os, sys
+print(f'NAME: --- {os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}')
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+#My imports
+from reinforcement_learning.envs.BO_env import BOEnv
+from reinforcement_learning.factories import GPFactory, CandidateFactory
+from functions.blackbox_function import BlackBoxFunc
+from functions.own_functions import not_too_easy_unique_opt
+
 
 @dataclass
 class Args:
@@ -39,13 +50,13 @@ class Args:
     """whether to capture videos of the agent performances (check out `videos` folder)"""
 
     # Algorithm specific arguments
-    env_id: str = "CartPole-v1"
+    env_id: str = "RL-BO-v0.1"
     """the id of the environment"""
-    total_timesteps: int = 500000
+    total_timesteps: int = 10000
     """total timesteps of the experiments"""
     learning_rate: float = 2.5e-4
     """the learning rate of the optimizer"""
-    num_envs: int = 4
+    num_envs: int = 1 #TODO: UP NUMBER OF PARALLEL 
     """the number of parallel game environments"""
     num_steps: int = 128
     """the number of steps to run in each environment per policy rollout"""
@@ -83,16 +94,20 @@ class Args:
     """the number of iterations (computed in runtime)"""
 
 
-def make_env(env_id, idx, capture_video, run_name):
+def make_env():
     def thunk():
-        if capture_video and idx == 0:
-            env = gym.make(env_id, render_mode="rgb_array")
-            env = gym.wrappers.RecordVideo(env, f"videos/{run_name}")
-        else:
-            env = gym.make(env_id)
+        env = BOEnv(
+            device="cuda",
+            dtype=torch.float32,
+            candidate_factory=CandidateFactory,
+            gp_factory=GPFactory,
+            objective_fn=BlackBoxFunc(not_too_easy_unique_opt, torch.pi),  # must be an instance with .evaluate(...)
+            n_candidates=100,
+            n_init=3,
+            budget=500,
+        )
         env = gym.wrappers.RecordEpisodeStatistics(env)
         return env
-
     return thunk
 
 
@@ -165,7 +180,7 @@ if __name__ == "__main__":
 
     # env setup
     envs = gym.vector.SyncVectorEnv(
-        [make_env(args.env_id, i, args.capture_video, run_name) for i in range(args.num_envs)],
+        [make_env() for i in range(args.num_envs)],
     )
     assert isinstance(envs.single_action_space, gym.spaces.Discrete), "only discrete action space is supported"
 
