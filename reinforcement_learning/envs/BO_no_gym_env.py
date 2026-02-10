@@ -5,15 +5,15 @@ import gpytorch as gpy
 
 
 
-class BOEnv(gym.Env):
+class BatchedBOEnv():
     '''Gymansium environment for one BO episode.'''
-    def __init__(self, device, dtype, candidate_factory, gp_factory, objective_fn, n_candidates=100, n_init=3, budget=500, reward_type="final_neglog_regret"):
-        super().__init__()
+    def __init__(self, device, dtype, num_batches, n_candidates, n_init, budget, reward_type, candidate_factory, gp_factory, objective_fn):
         # Device and dtype
         self.device = t.device(device)
         self.dtype = dtype
 
-        # Environment specifics
+        # Environment 
+        self.num_batches = num_batches
         self.n_candidates = n_candidates
         self.n_init = n_init
         self.budget = budget
@@ -24,8 +24,8 @@ class BOEnv(gym.Env):
         self.objective_fn = objective_fn
 
         # RL specifics (observation and action space)
-        observation_dim = 3 * n_candidates + 2  # (mean, std, and cost for each candidate) + remaining budget and best found solution so far
-        self.observation_space = gym.spaces.Box(low=-np.inf, high=np.inf, shape=(observation_dim,), dtype=np.float32)
+        observation_dim = (num_batches, n_candidates, 5) # mu, sigma, cost, remaining budget and best found
+        self.observation_space = gym.spaces.Box(low=-np.inf, high=np.inf, shape=observation_dim, dtype=np.float32)
         self.action_space = gym.spaces.Discrete(n_candidates)
 
         # Internal state
@@ -34,13 +34,15 @@ class BOEnv(gym.Env):
         self.gp = None
         self.train_history = []
         self.best_current_value = None
-        self.terminated = False
-        self.truncated = False
+        self.done = False
 
 
-    def reset(self, seed=None, options=None):
+    def reset(self, seed, deterministic):
         '''Reset the environment'''
-        super().reset(seed=seed)
+        # Set seed
+        t.manual_seed(seed)
+        t.backends.cudnn.deterministic = deterministic
+
         # Initialize Candidate set, costs and gaussian process
         self.X, self.costs = self._initialize_candidate_factory()     
         self.gp = self._initialize_gp()        

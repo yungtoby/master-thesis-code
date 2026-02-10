@@ -14,13 +14,11 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))    
 import os
 import random
 import time
-import tyro
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import gymnasium as gym
-from dataclasses import dataclass
 from torch.distributions.categorical import Categorical
 from torch.utils.tensorboard import SummaryWriter
 from reinforcement_learning.envs.BO_gym_env import BOEnv
@@ -60,20 +58,19 @@ args = {
 
 
 def make_env():
-    def thunk():
-        env = BOEnv(
-            device="cuda",
-            dtype=torch.float32,
-            candidate_factory=CandidateFactory,
-            gp_factory=GPFactory,
-            objective_fn=BlackBoxFunc(not_too_easy_unique_opt, torch.pi),  # must be an instance with .evaluate(...)
-            n_candidates=100,
-            n_init=3,
-            budget=500,
-        )
-        env = gym.wrappers.RecordEpisodeStatistics(env)
-        return env
-    return thunk
+    env = BOEnv(
+        device="cuda",
+        dtype=torch.float32,
+        num_batches=4,
+        candidate_factory=CandidateFactory,
+        gp_factory=GPFactory,
+        objective_fn=BlackBoxFunc(not_too_easy_unique_opt, torch.pi), 
+        n_candidates=100,
+        n_init=3,
+        budget=500,
+        reward_type="final_neglog_regret"
+    )
+    return env
 
 
 def layer_init(layer, std=np.sqrt(2), bias_const=0.0):
@@ -82,6 +79,7 @@ def layer_init(layer, std=np.sqrt(2), bias_const=0.0):
     return layer
 
 
+# TODO: Switch with own agent
 class Agent(nn.Module):
     def __init__(self, envs):
         super().__init__()
@@ -117,17 +115,23 @@ class Agent(nn.Module):
 
 
 if __name__ == "__main__":
+    # Calculating batch size, minibatch size and number of iterations
     args['batch_size'] = int(args['num_envs'] * args['num_steps'])
     args['minibatch_size'] = int(args['batch_size'] // args['num_minibatches'])
     args['num_iterations'] = args['total_timesteps'] // args['batch_size']
 
+
+    # Name of the current run
     run_name = f"{args['env_id']}__{args['exp_name']}__{args['seed']}__{int(time.time())}"
 
+
+    # Initializing summarywriter (tensorboard logic)
     writer = SummaryWriter(f'runs/{run_name}')
     writer.add_text(
         'hyperparameters',
-        '|param|value|\n|-|-|\n%s' % ('\n'.join([f'|{key}|{value}|' for key, value in vars(args).items()])),
+        '|param|value|\n|-|-|\n%s' % ('\n'.join([f'|{key}|{value}|' for key, value in args.items()])),
     )
+
 
     # TRY NOT TO MODIFY: seeding
     random.seed(args['seed'])
@@ -135,21 +139,23 @@ if __name__ == "__main__":
     torch.manual_seed(args['seed'])
     torch.backends.cudnn.deterministic = args['torch_deterministic']
 
+
+    # Selecting device
     device = torch.device('cuda' if torch.cuda.is_available() and args['cuda'] else 'cpu')
 
-    # TODO: WANT A SINGLE BATCHABLE ENV, RATHER THAN MANY ENV INSTANCES.
-    # env setup 
-    envs = gym.vector.SyncVectorEnv(
-        [make_env() for i in range(args['num_envs'])],
-    )
-    assert isinstance(envs.single_action_space, gym.spaces.Discrete), "only discrete action space is supported"
 
-    agent = Agent(envs).to(device)
+    # Environement setup 
+    # TODO: FIX ENV + AGENT
+    env = make_env()
+
+    # Agent setup
+    agent = Agent(env).to(device)
     optimizer = optim.Adam(agent.parameters(), lr=args['learning_rate'], eps=1e-5)
 
+
     # ALGO Logic: Storage setup
-    obs = torch.zeros((args['num_steps'], args['num_envs']) + envs.single_observation_space.shape).to(device)
-    actions = torch.zeros((args['num_steps'], args['num_envs']) + envs.single_action_space.shape).to(device)
+    obs = torch.zeros((args['num_steps'], args['num_envs']) + env.single_observation_space.shape).to(device)
+    actions = torch.zeros((args['num_steps'], args['num_envs']) + env.single_action_space.shape).to(device)
     logprobs = torch.zeros((args['num_steps'], args['num_envs'])).to(device)
     rewards = torch.zeros((args['num_steps'], args['num_envs'])).to(device)
     dones = torch.zeros((args['num_steps'], args['num_envs'])).to(device)
@@ -158,7 +164,7 @@ if __name__ == "__main__":
     # TRY NOT TO MODIFY: start the game
     global_step = 0
     start_time = time.time()
-    next_obs, _ = envs.reset(seed=args['seed'])
+    next_obs, _ = env.reset(seed=args['seed'], deterministic=args['torch_deterministic'])
     next_obs = torch.Tensor(next_obs).to(device)
     next_done = torch.zeros(args['num_envs']).to(device)
 
@@ -182,7 +188,7 @@ if __name__ == "__main__":
             logprobs[step] = logprob
 
             # TRY NOT TO MODIFY: execute the game and log data.
-            next_obs, reward, terminations, truncations, infos = envs.step(action.cpu().numpy())
+            next_obs, reward, terminations, truncations, infos = env.step(action.cpu().numpy())
             next_done = np.logical_or(terminations, truncations)
             rewards[step] = torch.tensor(reward).to(device).view(-1)
             next_obs, next_done = torch.Tensor(next_obs).to(device), torch.Tensor(next_done).to(device)
@@ -211,9 +217,9 @@ if __name__ == "__main__":
             returns = advantages + values
 
         # flatten the batch
-        b_obs = obs.reshape((-1,) + envs.single_observation_space.shape)
+        b_obs = obs.reshape((-1,) + env.single_observation_space.shape)
         b_logprobs = logprobs.reshape(-1)
-        b_actions = actions.reshape((-1,) + envs.single_action_space.shape)
+        b_actions = actions.reshape((-1,) + env.single_action_space.shape)
         b_advantages = advantages.reshape(-1)
         b_returns = returns.reshape(-1)
         b_values = values.reshape(-1)
@@ -289,5 +295,5 @@ if __name__ == "__main__":
         writer.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
 
 
-    envs.close()
+    env.close()
     writer.close()
