@@ -59,10 +59,6 @@ class BOEnv(gym.Env):
         # Convert to numpy as gym expects numpy
         obs_np = obs.detach().cpu().numpy().astype(np.float32)
 
-        # TODO: DEBUG
-        if not np.isfinite(obs_np).all():
-            print("Obs has NaN/Inf!", obs_np)
-            raise RuntimeError("Non-finite obs")
 
         return obs_np, {}
     

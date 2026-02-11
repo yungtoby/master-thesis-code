@@ -18,14 +18,14 @@ import tyro
 from torch.distributions.categorical import Categorical
 from torch.utils.tensorboard import SummaryWriter
 
-#FIXME: quick fix for imports
+#Quick fix for imports
 import os, sys
 print(f'NAME: --- {os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}')
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 #My imports
 from reinforcement_learning.envs.BO_gym_env import BOEnv
-from reinforcement_learning.factories import GPFactory, CandidateFactory
+from factories import GPFactory, CandidateFactory
 from functions.blackbox_function import BlackBoxFunc
 from functions.own_functions import not_too_easy_unique_opt
 
@@ -52,11 +52,11 @@ class Args:
     # Algorithm specific arguments
     env_id: str = "RL-BO-v0.1"
     """the id of the environment"""
-    total_timesteps: int = 10000 #TODO: UP THE COUNT
+    total_timesteps: int = 10000 
     """total timesteps of the experiments"""
     learning_rate: float = 1e-4
     """the learning rate of the optimizer"""
-    num_envs: int = 4 #TODO: UP NUMBER OF PARALLEL 
+    num_envs: int = 4
     """the number of parallel game environments"""
     num_steps: int = 32
     """the number of steps to run in each environment per policy rollout"""

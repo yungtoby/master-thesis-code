@@ -24,9 +24,7 @@ class BatchedBOEnv():
         self.objective_fn = objective_fn
 
         # RL specifics (observation and action space)
-        observation_dim = (num_batches, n_candidates, 5) # mu, sigma, cost, remaining budget and best found
-        self.observation_space = gym.spaces.Box(low=-np.inf, high=np.inf, shape=observation_dim, dtype=np.float32)
-        self.action_space = gym.spaces.Discrete(n_candidates)
+        self.observation_dim = (num_batches, n_candidates, 5)
 
         # Internal state
         self.X = None
@@ -61,13 +59,9 @@ class BatchedBOEnv():
         # Convert to numpy as gym expects numpy
         obs_np = obs.detach().cpu().numpy().astype(np.float32)
 
-        # TODO: DEBUG
-        if not np.isfinite(obs_np).all():
-            print("Obs has NaN/Inf!", obs_np)
-            raise RuntimeError("Non-finite obs")
-
         return obs_np, {}
     
+
 
     def _initialize_candidate_factory(self):
         # Placeholder, need to implement better solution
@@ -78,10 +72,15 @@ class BatchedBOEnv():
             'maximum' : 10
         }
 
-        self.X, self.costs = self.candidate_factory(**kwargs)
+        x_s_and_costs = [(self.candidate_factory(**kwargs)) for _ in range(self.num_batches)]
+        x_s = t.stack([x[0] for x in x_s_and_costs], dim=0)
+        costs = t.stack([x[1] for x in x_s_and_costs], dim=0)
+
+        self.X, self.costs = x_s, costs
         return self.X, self.costs     
 
 
+    # TODO: make batchable GP
     def _initialize_gp(self):
         # init points, need to implement better solution
         K = self.X.shape[0]
@@ -93,14 +92,27 @@ class BatchedBOEnv():
         kwargs = {
             'train_x' : train_x,
             'train_y' : self.objective_fn.evaluate(train_x).squeeze(-1),
-            'likelihood' : gpy.likelihoods.GaussianLikelihood(),
-            'mean_module' : gpy.means.ConstantMean(),
-            'covar_module' : gpy.kernels.ScaleKernel(gpy.kernels.RBFKernel()),
+            'likelihood' : gpy.likelihoods.GaussianLikelihood(batch_shape=t.Size([self.num_batches])),
+            'mean_module' : gpy.means.ConstantMean(batch_shape=t.Size([self.num_batches])),
+            'covar_module' : gpy.kernels.ScaleKernel(
+                gpy.kernels.RBFKernel(batch_shape=t.Size([self.num_batches]), ard_num_dims=train_x.shape[2]),
+                batch_shape=t.Size([self.num_batches])
+                ),
             'optimizer_and_lr' : (t.optim.Adam, 0.1),
             'training_iter' : 10
         }
 
         return self.gp_factory(**kwargs)
+
+
+
+
+
+
+
+
+
+
 
 
     def _gp_predict_on_candidates(self):

@@ -18,11 +18,10 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import gymnasium as gym
 from torch.distributions.categorical import Categorical
 from torch.utils.tensorboard import SummaryWriter
 from reinforcement_learning.envs.BO_gym_env import BOEnv
-from reinforcement_learning.factories import GPFactory, CandidateFactory
+from factories import GPFactory, CandidateFactory
 from functions.blackbox_function import BlackBoxFunc
 from functions.own_functions import not_too_easy_unique_opt
 
