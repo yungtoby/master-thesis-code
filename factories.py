@@ -5,15 +5,17 @@ from candidate_set import CandidateSet
 
 class GPFactory:
     '''Callable factory that creates independent GPWrapper instance'''
-    def __init__(self, device: str = "cpu", dtype = t.float32):
+    def __init__(self, device: str = "cpu", dtype = t.float32, batch_size = 1):
         self.device = device
         self.dtype = dtype
+        self.batch_size = batch_size
 
     def __call__(self, **kwargs):
         # Create a new GPWrapper
         gp = GPWrapper(
             device=t.device(self.device),
             dtype=self.dtype,
+            batch_size=self.batch_size, 
             **kwargs
         )
 

@@ -22,6 +22,7 @@ class GPWrapper:
         # Initializing device and dtype
         self.device = t.device(device)
         self.dtype = dtype
+        self.batch_size = batch_size
 
         # Initializing training data and moving to device + reshaping y to 1D
         self.train_x = train_x.to(device = self.device, dtype = self.dtype).contiguous()

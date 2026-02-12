@@ -1,8 +1,6 @@
-import gymnasium as gym
 import torch as t
 import numpy as np
 import gpytorch as gpy
-
 
 
 class BatchedBOEnv():
@@ -20,7 +18,7 @@ class BatchedBOEnv():
         self.remaining_budget = budget
         self.reward_type = reward_type 
         self.candidate_factory = candidate_factory(device, dtype)
-        self.gp_factory = gp_factory(device, dtype)
+        self.gp_factory = gp_factory(device, dtype, num_batches)
         self.objective_fn = objective_fn
 
         # RL specifics (observation and action space)
@@ -30,7 +28,8 @@ class BatchedBOEnv():
         self.X = None
         self.costs = None
         self.gp = None
-        self.train_history = []
+        self.ep_return = None
+        self.ep_len = None
         self.best_current_value = None
         self.done = False
 
@@ -47,11 +46,11 @@ class BatchedBOEnv():
         self.gp.train()                               
 
         # Reset train history, best val and remaining budget
-        self.train_history = []              
-        self.remaining_budget = t.tensor(float(self.budget), device=self.device, dtype=self.dtype)
-        self.best_current_value = t.max(self.gp.train_y)
-        self.terminated = False
-        self.truncated = False
+        self.ep_return = t.zeros((self.num_batches,), device=self.device, dtype=self.dtype)      
+        self.ep_len = t.zeros((self.num_batches,), device=self.device, dtype=self.dtype)         
+        self.remaining_budget = t.full((self.num_batches,), self.budget, device=self.device, dtype=self.dtype)
+        self.best_current_value = self.gp.train_y.max(dim=1).values
+        self.done = t.full((self.num_batches,), False, device=self.device, dtype=t.bool)
 
         # Compute initial mu, sigma and build observation
         obs = self._build_obs(*self._gp_predict_on_candidates())
@@ -61,7 +60,6 @@ class BatchedBOEnv():
 
         return obs_np, {}
     
-
 
     def _initialize_candidate_factory(self):
         # Placeholder, need to implement better solution
@@ -80,13 +78,11 @@ class BatchedBOEnv():
         return self.X, self.costs     
 
 
-    # TODO: make batchable GP
     def _initialize_gp(self):
         # init points, need to implement better solution
-        K = self.X.shape[0]
-        idx = self.np_random.choice(K, size=self.n_init, replace=False)
-        train_x = self.X[idx]
-        
+        N = self.X.shape[1]
+        idx = t.randperm(N, device=self.device)[: self.n_init]   # [n_init]
+        train_x = self.X[:, idx, :]                              # [B, n_init, d]
 
         # Placeholder, need to implement better solution
         kwargs = {
@@ -103,23 +99,13 @@ class BatchedBOEnv():
         }
 
         return self.gp_factory(**kwargs)
-
-
-
-
-
-
-
-
-
-
-
+    
 
     def _gp_predict_on_candidates(self):
         with t.no_grad():
             pred = self.gp.predict(self.X)  
-            mu = pred.mean.reshape(-1)      
-            sigma = pred.stddev.reshape(-1)  
+            mu = pred.mean      
+            sigma = pred.stddev
 
         return mu, sigma
 
