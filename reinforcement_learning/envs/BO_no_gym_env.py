@@ -17,7 +17,7 @@ class BatchedBOEnv():
         self.budget = budget
         self.remaining_budget = budget
         self.reward_type = reward_type 
-        self.candidate_factory = candidate_factory(device, dtype)
+        self.candidate_factory = candidate_factory(device, dtype)   
         self.gp_factory = gp_factory(device, dtype, num_batches)
         self.objective_fn = objective_fn
 
@@ -55,10 +55,7 @@ class BatchedBOEnv():
         # Compute initial mu, sigma and build observation
         obs = self._build_obs(*self._gp_predict_on_candidates())
 
-        # Convert to numpy as gym expects numpy
-        obs_np = obs.detach().cpu().numpy().astype(np.float32)
-
-        return obs_np, {}
+        return obs, {}
     
 
     def _initialize_candidate_factory(self):
@@ -111,65 +108,60 @@ class BatchedBOEnv():
 
 
     def _build_obs(self, mu, sigma):
-        # Build observation based on paper
-        obs = t.concatenate([
-            mu,
-            sigma,
-            self.costs,
-            t.as_tensor(self.remaining_budget, device=self.device, dtype=self.dtype).view(1),
-            t.as_tensor(self.best_current_value, device=self.device, dtype=self.dtype).view(1)
-        ])
+        B, N = mu.shape
 
-        return obs.to(dtype=t.float32)
+        budget = self.remaining_budget.unsqueeze(1).expand(B, N)        # [B] -> [B,N]
+        best   = self.best_current_value.unsqueeze(1).expand(B, N)      # [B] -> [B,N]
+
+        obs = t.stack([mu, sigma, self.costs, budget, best], dim=-1)    # [B, N, 5]
+
+        return obs
 
 
-    def step(self, action):
-        # If step after termination or truncation, return zero reward.
-        if self.terminated or self.truncated:
-            obs = self._build_obs(*self._gp_predict_on_candidates())
-            obs_np = obs.detach().cpu().numpy().astype(np.float32)
+    def step(self, actions):
+        # Get chosen candidate points and their respective costs
+        B, _, d = self.X.shape
 
-            return obs_np, 0.0, self.terminated, self.truncated, {}
+        x_idx = actions.view(B, 1, 1).expand(B, 1, d)                     # [B]->[B,1,1]->[B,1,d]
+        x = t.gather(self.X, dim=1, index=x_idx)                          # [B,N,d] gather -> [B,1,d]
 
-        # Get chosen candidate point and its cost
-        idx = int(action)                                               
-        x = self.X[idx:idx+1]
-        cost = self.costs[idx]
+        c_idx = actions.view(B, 1)                                        # [B]->[B,1]
+        cost = t.gather(self.costs, dim=1, index=c_idx).squeeze(1)        # [B,N] gather -> [B,1]->[B]
 
 
         # Evaluate objective with candidate point
-        y = self.objective_fn.evaluate(x).reshape(1)
-
+        y = self.objective_fn.evaluate(x)
 
         # Append new data to gp, train and update current best if better
         self.gp.add_data(x, y)
-        self.gp.train() # Might need to only train every k-steps?
+        self.gp.train() 
 
-
-        self.best_current_value = t.maximum(self.best_current_value, y.squeeze())
+        # Update state
+        self.best_current_value = t.maximum(self.best_current_value, y.squeeze(1))
         self.remaining_budget = self.remaining_budget - cost
-        if self.remaining_budget <= 0:
-            self.terminated = True
+        self.done = self.remaining_budget <= 0
 
 
         # Build new observation for Agent
-        mu, sigma = self._gp_predict_on_candidates()
-        obs = self._build_obs(mu, sigma)
-        obs_np = obs.detach().cpu().numpy().astype(np.float32)
+        obs = self._build_obs(*self._gp_predict_on_candidates())
         
 
-        # If terminated or truncated, calculate (reward type specified if we want to try others)
-        reward = 0.0
+        # If done, calculate (reward type specified if we want to try others)
+        reward = t.zeros((B,), device=self.device, dtype=self.dtype)
         info = {}
-        if self.terminated or self.truncated and self.reward_type == "final_neglog_regret":
-            ground_truth = self._get_true_optimum_value()  # implement or pass in; else approximate by best of full objective
-            regret = ground_truth - self.best_current_value
 
-            # In case regret is equal to zero (should not this be min() instead of max())
-            sr = t.clamp(regret, min=t.tensor(1e-12, device=self.device, dtype=self.dtype))
-            reward = float((-t.log(sr)).detach().cpu())
 
-        return obs_np, reward, self.terminated, self.truncated, info
+        if self.reward_type == "final_neglog_regret":
+            if self.done.any():
+
+                ground_truth = self._get_true_optimum_value()  # implement or pass in; else approximate by best of full objective
+                regret = ground_truth - self.best_current_value                                # [B]
+                safe_regret = t.clamp(regret, min=t.tensor(1e-12, device=self.device, dtype=self.dtype))
+                reward[self.done] = -t.log(safe_regret[self.done])
+
+        # TODO: misses full implementation
+
+        return obs, reward, self.done, info
 
 
     def _get_true_optimum_value(self):
