@@ -1,10 +1,17 @@
+################### QUICK FIX FOR IMPORTS: ############################################ 
+import os, sys                                                                        #
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))          #
+#######################################################################################
+
 import torch as t
 import gpytorch as gpy
+from gaussian_process_batch_FINAL import MaskedGPWrapper
+
 
 
 class BatchedBOEnv():
     '''Gymansium environment for one BO episode.'''
-    def __init__(self, device, dtype, num_batches, n_candidates, n_init, budget, reward_type, candidate_factory, gp_factory, objective_fn):
+    def __init__(self, device, dtype, num_batches, n_candidates, n_init, budget, reward_type, max_acquistions, candidate_factory, objective_fn):
         # Device and dtype
         self.device = t.device(device)
         self.dtype = dtype
@@ -16,8 +23,9 @@ class BatchedBOEnv():
         self.budget = budget
         self.remaining_budget = budget
         self.reward_type = reward_type 
+        self.T_max = self.n_init + max_acquistions
+        self.last_obs = None
         self.candidate_factory = candidate_factory(device, dtype)   
-        self.gp_factory = gp_factory(device, dtype, num_batches)
         self.objective_fn = objective_fn
 
         # RL specifics (observation and action space)
@@ -39,84 +47,87 @@ class BatchedBOEnv():
         t.manual_seed(seed)
         t.backends.cudnn.deterministic = deterministic
 
-        # Initialize Candidate set, costs and gaussian process
-        self.X, self.costs = self._initialize_candidate_factory()     
-        self.gp = self._initialize_gp()        
-        self.gp.train()                               
+        # Initialize Candidate set, costs
+        self.X, self.costs = self._initialize_candidate_factory() # TODO: Needs work
 
-        # Reset train history, best val and remaining budget
-        self.ep_return = t.zeros((self.num_batches,), device=self.device, dtype=self.dtype)      
-        self.ep_len = t.zeros((self.num_batches,), device=self.device, dtype=self.dtype)         
+        # And gaussian process   
+        d = self.X.shape[-1]
+        self.gp = MaskedGPWrapper(
+            device=self.device,
+            dtype=self.dtype,
+            B=self.num_batches,
+            T_max=self.T_max,
+            d=d,
+            base_noise=1e-4,
+            lr=1e-2,
+            training_iter=10
+        )                               
+
+        # Initialize initial points for each lane in the batch
+        x_init, y_init = self._sample_init_design()
+        self.gp.set_lane_data(t.ones((self.num_batches,), device=self.device, dtype=self.dtype), x_init, y_init)
+        self.gp.train()
+                
+        # Reset environment scalars and find best current values among init
         self.remaining_budget = t.full((self.num_batches,), self.budget, device=self.device, dtype=self.dtype)
-        self.best_current_value = self.gp.train_y.max(dim=1).values
         self.done = t.full((self.num_batches,), False, device=self.device, dtype=t.bool)
+        self.best_current_value = y_init.max(dim=1).values
 
         # Compute initial mu, sigma and build observation
         obs = self._build_obs(*self._gp_predict_on_candidates())
+        self.last_obs = obs
+
+        # self.ep_return = t.zeros((self.num_batches,), device=self.device, dtype=self.dtype) # TODO: Needs fixing
+        # self.ep_len = t.zeros((self.num_batches,), device=self.device, dtype=self.dtype) 
 
         return obs, {}
     
 
-    def _initialize_candidate_factory(self):
-        # Placeholder, need to implement better solution
-        kwargs = {
-            'res' : 100,
-            'D' : 1,
-            'minimum' : 0,
-            'maximum' : 10
-        }
+    def _sample_init_design(self):
+        '''Sample the n_init number of initial training points'''
+        # Choose n_init random indices from length N
+        _, N, _ = self.X.shape
+        idx = t.randperm(N, device=self.device)[: self.n_init]
 
-        x_s_and_costs = [(self.candidate_factory(**kwargs)) for _ in range(self.num_batches)]
-        x_s = t.stack([x[0] for x in x_s_and_costs], dim=0)
-        costs = t.stack([x[1] for x in x_s_and_costs], dim=0)
+        # Choose the following from X and evaluate on objective function.
+        train_x = self.X[:, idx, :]
+        train_y = self.objective_fn.evaluate(train_x).squeeze(-1) # TODO: fiks objective func logic
 
-        self.X, self.costs = x_s, costs
-        return self.X, self.costs     
-
-
-    def _initialize_gp(self):
-        # init points, need to implement better solution
-        N = self.X.shape[1]
-        idx = t.randperm(N, device=self.device)[: self.n_init]   # [n_init]
-        train_x = self.X[:, idx, :]                              # [B, n_init, d]
-
-        # Placeholder, need to implement better solution
-        kwargs = {
-            'train_x' : train_x,
-            'train_y' : self.objective_fn.evaluate(train_x).squeeze(-1),
-            'likelihood' : gpy.likelihoods.GaussianLikelihood(batch_shape=t.Size([self.num_batches])),
-            'mean_module' : gpy.means.ConstantMean(batch_shape=t.Size([self.num_batches])),
-            'covar_module' : gpy.kernels.ScaleKernel(
-                gpy.kernels.RBFKernel(batch_shape=t.Size([self.num_batches]), ard_num_dims=train_x.shape[2]),
-                batch_shape=t.Size([self.num_batches])
-                ),
-            'optimizer_and_lr' : (t.optim.Adam, 0.1),
-            'training_iter' : 10
-        }
-
-        return self.gp_factory(**kwargs)
+        return train_x, train_y
     
 
-    def _gp_predict_on_candidates(self):
-        with t.no_grad():
-            pred = self.gp.predict(self.X)  
-            mu = pred.mean      
-            sigma = pred.stddev
+    def _reset_lanes(self, lane_mask):
+        # TODO: do we need lane wise seeding??
+        # Find which lanes to reset, if none, return
+        lanes = t.where(lane_mask)[0]
+        if lanes.numel() == 0:
+            return
+        
+        # Regenerate candidates for these lanes
+        X_new, c_new = self._initialize_candidate_factory(lane_mask)
+        self.X[lanes] = X_new[lanes]
+        self.costs[lanes] = c_new[lanes]
 
-        return mu, sigma
+        # Reset budget / done
+        self.budget[lanes] = self.budget
+        self.done[lanes] = False
 
+        # New init design and load into GP buffers
+        x_init, y_init = self._sample_init_design(lane_mask) # TODO: Sample init design needs to accept lane mask
+        self.gp.set_lane_data(lane_mask, x_init, y_init)
+        self.gp.train()
 
-    def _build_obs(self, mu, sigma):
-        B, N = mu.shape
+        # Update best current values after new init
+        self.best_current_value[lanes] = y_init[lanes].max(dim=1).values
+    
 
-        budget = self.remaining_budget.unsqueeze(1).expand(B, N)        # [B] -> [B,N]
-        best   = self.best_current_value.unsqueeze(1).expand(B, N)      # [B] -> [B,N]
-
-        obs = t.stack([mu, sigma, self.costs, budget, best], dim=-1)    # [B, N, 5]
-
-        return obs
-
-
+    ########################################################
+    #                                                      #
+    #                                                      #
+    #              NEXT TO DO FUNC TO UPDATE               #
+    #                                                      #
+    #                                                      #
+    ########################################################
     def step(self, actions):
         # Get chosen candidate points and their respective costs
         B, _, d = self.X.shape
@@ -163,16 +174,43 @@ class BatchedBOEnv():
         return obs, reward, self.done, info
 
 
+
+    def _initialize_candidate_factory(self): # TODO: needs logic fix
+        # Placeholder, need to implement better solution
+        kwargs = {
+            'res' : 100,
+            'D' : 1,
+            'minimum' : 0,
+            'maximum' : 10
+        }
+
+        x_s_and_costs = [(self.candidate_factory(**kwargs)) for _ in range(self.num_batches)]
+        x_s = t.stack([x[0] for x in x_s_and_costs], dim=0)
+        costs = t.stack([x[1] for x in x_s_and_costs], dim=0)
+
+        self.X, self.costs = x_s, costs
+        return self.X, self.costs     
+
+
+    def _gp_predict_on_candidates(self):
+        with t.no_grad():
+            pred = self.gp.predict(self.X)  
+            mu = pred.mean      
+            sigma = pred.stddev
+
+        return mu, sigma
+
+
+    def _build_obs(self, mu, sigma):
+        B, N = mu.shape
+
+        budget = self.remaining_budget.unsqueeze(1).expand(B, N)        # [B] -> [B,N]
+        best   = self.best_current_value.unsqueeze(1).expand(B, N)      # [B] -> [B,N]
+
+        obs = t.stack([mu, sigma, self.costs, budget, best], dim=-1)    # [B, N, 5]
+
+        return obs
+
+
     def _get_true_optimum_value(self):
         return self.objective_fn.get_optimal_value()
-    
-
-    ########################
-    # UNUSED FUNCTIONALITY #
-    ########################
-
-    def render(self, mode="human"):
-        pass
-
-    def close(self):
-        pass
