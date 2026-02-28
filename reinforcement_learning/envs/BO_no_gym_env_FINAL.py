@@ -121,57 +121,58 @@ class BatchedBOEnv():
         self.best_current_value[lanes] = y_init[lanes].max(dim=1).values
     
 
-    ########################################################
-    #                                                      #
-    #                                                      #
-    #              NEXT TO DO FUNC TO UPDATE               #
-    #                                                      #
-    #                                                      #
-    ########################################################
+
     def step(self, actions):
-        # Get chosen candidate points and their respective costs
+
         B, _, d = self.X.shape
+        active = not self.done
 
-        x_idx = actions.view(B, 1, 1).expand(B, 1, d)                     # [B]->[B,1,1]->[B,1,d]
-        x = t.gather(self.X, dim=1, index=x_idx)                          # [B,N,d] gather -> [B,1,d]
-
-        c_idx = actions.view(B, 1)                                        # [B]->[B,1]
-        cost = t.gather(self.costs, dim=1, index=c_idx).squeeze(1)        # [B,N] gather -> [B,1]->[B]
-
-
-        # Evaluate objective with candidate point
-        y = self.objective_fn.evaluate(x)
-
-        # Append new data to gp, train and update current best if better
-        self.gp.add_data(x, y)
-        self.gp.train() 
-
-        # Update state
-        self.best_current_value = t.maximum(self.best_current_value, y.squeeze(1))
-        self.remaining_budget = self.remaining_budget - cost
-        self.done = self.remaining_budget <= 0
-
-
-        # Build new observation for Agent
-        obs = self._build_obs(*self._gp_predict_on_candidates())
-        
-
-        # If done, calculate (reward type specified if we want to try others)
-        reward = t.zeros((B,), device=self.device, dtype=self.dtype)
+        # Default outputs 
+        reward = t.zeros((B,),  device=self.device, dtype=self.dtype)
         info = {}
 
+        if active.any():
+            # Retrieve points chosen in each batch by acquisition function, and cost
+                # Reshape such that we can use torch.gather()
+            x_idx = actions.view(B, 1, 1).expand(B, 1, d)
+            x = t.gather(self.X, 1, x_idx)
 
-        if self.reward_type == "final_neglog_regret":
-            if self.done.any():
+                # Reshape such that we can use torch.gather()
+            c_idx = actions.view(B, 1)
+            cost = t.gather(self.costs, 1, c_idx)
 
-                ground_truth = self._get_true_optimum_value()  # implement or pass in; else approximate by best of full objective
-                regret = ground_truth - self.best_current_value                                # [B]
-                safe_regret = t.clamp(regret, min=t.tensor(1e-12, device=self.device, dtype=self.dtype))
-                reward[self.done] = -t.log(safe_regret[self.done])
+            # Evaluate for active lanes # TODO: does it actually only evaluate the active lanes?
+            y = self.objective_fn.evaluate(x).squeeze(-1) # Dim: [B, 1]
+            y1 = y.squeeze(1) # Dim: [B]
 
-        # TODO: misses full implementation
+            # Add data for the active lanes
+            self.gp.add_data(x, y, active)
+            self.gp.train()
 
-        return obs, reward, self.done, info
+            # Update state for active lanes in the batch
+            self.best_current_value[active] = t.maximum(self.best_current_value[active], y1[active])
+            self.remaining_budget[active] = self.remaining_budget[active] - cost[active]
+            self.done[active] = self.remaining_budget[active] <= 0
+
+        # Terminal mask for PPO, which lanes ended THIS step
+        terminal = self.done.clone()
+
+        if (self.reward_type == "final_neglog_regret") and (terminal.any()):
+            ground_truth = self._get_true_optimum_value() # TODO: Needs extra fixing!
+            regret = ground_truth - self.best_current_value
+            reward[terminal] = -t.log(t.clamp(regret[terminal], 1e-12))
+
+        if terminal.any():
+            self._reset_lanes(terminal)
+
+        obs = self._build_obs(*self._gp_predict_on_candidates())
+        self.last_obs = obs
+
+        return obs, reward, terminal, info
+
+
+
+
 
 
 
