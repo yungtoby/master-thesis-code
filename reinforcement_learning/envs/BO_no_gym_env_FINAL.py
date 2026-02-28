@@ -21,7 +21,7 @@ class BatchedBOEnv():
         self.n_candidates = n_candidates
         self.n_init = n_init
         self.budget = budget
-        self.remaining_budget = budget
+        self.remaining_budget = None
         self.reward_type = reward_type 
         self.T_max = self.n_init + max_acquistions
         self.last_obs = None
@@ -65,7 +65,7 @@ class BatchedBOEnv():
 
         # Initialize initial points for each lane in the batch
         x_init, y_init = self._sample_init_design()
-        self.gp.set_lane_data(t.ones((self.num_batches,), device=self.device, dtype=self.dtype), x_init, y_init)
+        self.gp.set_lane_data(t.ones((self.num_batches,), device=self.device, dtype=t.bool), x_init, y_init)
         self.gp.train()
                 
         # Reset environment scalars and find best current values among init
@@ -97,19 +97,18 @@ class BatchedBOEnv():
     
 
     def _reset_lanes(self, lane_mask):
-        # TODO: do we need lane wise seeding??
         # Find which lanes to reset, if none, return
         lanes = t.where(lane_mask)[0]
         if lanes.numel() == 0:
             return
         
         # Regenerate candidates for these lanes
-        X_new, c_new = self._initialize_candidate_factory(lane_mask)
+        X_new, c_new = self._initialize_candidate_factory(lane_mask) # TODO: init candidate factory for mask
         self.X[lanes] = X_new[lanes]
         self.costs[lanes] = c_new[lanes]
 
         # Reset budget / done
-        self.budget[lanes] = self.budget
+        self.remaining_budget[lanes] = self.budget
         self.done[lanes] = False
 
         # New init design and load into GP buffers
@@ -125,7 +124,7 @@ class BatchedBOEnv():
     def step(self, actions):
 
         B, _, d = self.X.shape
-        active = not self.done
+        active = ~self.done
 
         # Default outputs 
         reward = t.zeros((B,),  device=self.device, dtype=self.dtype)
@@ -139,19 +138,20 @@ class BatchedBOEnv():
 
                 # Reshape such that we can use torch.gather()
             c_idx = actions.view(B, 1)
-            cost = t.gather(self.costs, 1, c_idx)
+            cost = t.gather(self.costs, 1, c_idx).squeeze(1)
 
-            # Evaluate for active lanes # TODO: does it actually only evaluate the active lanes?
-            y = self.objective_fn.evaluate(x).squeeze(-1) # Dim: [B, 1]
+            # Evaluate for active lanes 
+            y = t.zeros((B,1), device=self.device, dtype=self.dtype)
+            y[active] = self.objective_fn.evaluate(x[active])
             y1 = y.squeeze(1) # Dim: [B]
 
             # Add data for the active lanes
-            self.gp.add_data(x, y, active)
+            self.gp.add_data(x, y, active_mask=active)
             self.gp.train()
 
             # Update state for active lanes in the batch
             self.best_current_value[active] = t.maximum(self.best_current_value[active], y1[active])
-            self.remaining_budget[active] = self.remaining_budget[active] - cost[active]
+            self.remaining_budget[active] -= cost[active]
             self.done[active] = self.remaining_budget[active] <= 0
 
         # Terminal mask for PPO, which lanes ended THIS step
@@ -160,7 +160,7 @@ class BatchedBOEnv():
         if (self.reward_type == "final_neglog_regret") and (terminal.any()):
             ground_truth = self._get_true_optimum_value() # TODO: Needs extra fixing!
             regret = ground_truth - self.best_current_value
-            reward[terminal] = -t.log(t.clamp(regret[terminal], 1e-12))
+            reward[terminal] = -t.log(t.clamp(regret[terminal], min=1e-12))
 
         if terminal.any():
             self._reset_lanes(terminal)
