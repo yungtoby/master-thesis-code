@@ -1,2 +1,0 @@
-class RLUtils:
-    pass

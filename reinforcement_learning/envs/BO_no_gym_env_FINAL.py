@@ -4,14 +4,14 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))    
 #######################################################################################
 
 import torch as t
-import gpytorch as gpy
 from gaussian_process_batch_FINAL import MaskedGPWrapper
+from candidate_set_batch import BatchedCandidateSet
 
 
 
 class BatchedBOEnv():
     '''Gymansium environment for one BO episode.'''
-    def __init__(self, device, dtype, num_batches, n_candidates, n_init, budget, reward_type, max_acquistions, candidate_factory, objective_fn):
+    def __init__(self, device, dtype, num_batches, n_candidates, n_init, budget, reward_type, max_acquistions, objective_fn):
         # Device and dtype
         self.device = t.device(device)
         self.dtype = dtype
@@ -25,7 +25,6 @@ class BatchedBOEnv():
         self.reward_type = reward_type 
         self.T_max = self.n_init + max_acquistions
         self.last_obs = None
-        self.candidate_factory = candidate_factory(device, dtype)   
         self.objective_fn = objective_fn
 
         # RL specifics (observation and action space)
@@ -48,7 +47,18 @@ class BatchedBOEnv():
         t.backends.cudnn.deterministic = deterministic
 
         # Initialize Candidate set, costs
-        self.X, self.costs = self._initialize_candidate_factory() # TODO: Needs work
+        self.candidate_set = BatchedCandidateSet(
+            device=self.device,
+            dtype=self.dtype,
+            B=self.B,
+            res=100,
+            D=2,
+            minimum=0,
+            maximum=10
+        )
+        self.X = self.candidate_set.get_grid()
+
+        self.costs, self.lane_params = ...  # TODO: Needs work
 
         # And gaussian process   
         d = self.X.shape[-1]
@@ -122,7 +132,6 @@ class BatchedBOEnv():
 
 
     def step(self, actions):
-
         B, _, d = self.X.shape
         active = ~self.done
 
@@ -171,26 +180,6 @@ class BatchedBOEnv():
         return obs, reward, terminal, info
 
 
-
-
-
-
-
-    def _initialize_candidate_factory(self): # TODO: needs logic fix
-        # Placeholder, need to implement better solution
-        kwargs = {
-            'res' : 100,
-            'D' : 1,
-            'minimum' : 0,
-            'maximum' : 10
-        }
-
-        x_s_and_costs = [(self.candidate_factory(**kwargs)) for _ in range(self.num_batches)]
-        x_s = t.stack([x[0] for x in x_s_and_costs], dim=0)
-        costs = t.stack([x[1] for x in x_s_and_costs], dim=0)
-
-        self.X, self.costs = x_s, costs
-        return self.X, self.costs     
 
 
     def _gp_predict_on_candidates(self):

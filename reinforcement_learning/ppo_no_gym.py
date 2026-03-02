@@ -21,7 +21,6 @@ import torch.optim as optim
 from torch.distributions.categorical import Categorical
 from torch.utils.tensorboard import SummaryWriter
 from reinforcement_learning.envs.BO_gym_env import BOEnv
-from factories import GPFactory, CandidateFactory
 from functions.blackbox_function import BlackBoxFunc
 from functions.own_functions import not_too_easy_unique_opt
 
