@@ -24,8 +24,8 @@ print(f'NAME: --- {os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}'
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 #My imports
-from reinforcement_learning.envs.BO_gym_env import BOEnv
-from factories import GPFactory, CandidateFactory
+from archive.BO_gym_env import BOEnv
+#from factories import GPFactory, CandidateFactory
 from functions.blackbox_function import BlackBoxFunc
 from functions.own_functions import not_too_easy_unique_opt
 
@@ -99,8 +99,8 @@ def make_env():
         env = BOEnv(
             device="cuda",
             dtype=torch.float32,
-            candidate_factory=CandidateFactory,
-            gp_factory=GPFactory,
+            #candidate_factory=CandidateFactory,
+            #gp_factory=GPFactory,
             objective_fn=BlackBoxFunc(not_too_easy_unique_opt, torch.pi),  # must be an instance with .evaluate(...)
             n_candidates=100,
             n_init=3,

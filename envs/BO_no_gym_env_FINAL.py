@@ -4,8 +4,8 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))    
 #######################################################################################
 
 import torch as t
-from gaussian_process_batch_FINAL import MaskedGPWrapper
-from candidate_set_batch import BatchedCandidateSet
+from bo.gaussian_process_batch_FINAL import MaskedGPWrapper
+from bo.candidate_set_batch import BatchedCandidateSet
 
 
 

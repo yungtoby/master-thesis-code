@@ -20,9 +20,9 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.distributions.categorical import Categorical
 from torch.utils.tensorboard import SummaryWriter
-from reinforcement_learning.envs.BO_gym_env import BOEnv
-from functions.blackbox_function import BlackBoxFunc
-from functions.own_functions import not_too_easy_unique_opt
+from archive.BO_gym_env import BOEnv
+#from functions.blackbox_function import BlackBoxFunc
+#from functions.own_functions import not_too_easy_unique_opt
 
 # CURRENT PLACEHOLDER FOR ARGS COMMAND USED BY CLEANRL
 args = {
@@ -60,9 +60,9 @@ def make_env():
         device="cuda",
         dtype=torch.float32,
         num_batches=4,
-        candidate_factory=CandidateFactory,
-        gp_factory=GPFactory,
-        objective_fn=BlackBoxFunc(not_too_easy_unique_opt, torch.pi), 
+        #candidate_factory=CandidateFactory,
+        #gp_factory=GPFactory,
+        #objective_fn=BlackBoxFunc(not_too_easy_unique_opt, torch.pi), 
         n_candidates=100,
         n_init=3,
         budget=500,
