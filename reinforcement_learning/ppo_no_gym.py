@@ -20,9 +20,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.distributions.categorical import Categorical
 from torch.utils.tensorboard import SummaryWriter
-from archive.BO_gym_env import BOEnv
-#from functions.blackbox_function import BlackBoxFunc
-#from functions.own_functions import not_too_easy_unique_opt
+from envs.BO_no_gym_env_FINAL import BatchedBOEnv
 
 # CURRENT PLACEHOLDER FOR ARGS COMMAND USED BY CLEANRL
 args = {
@@ -56,17 +54,15 @@ args = {
 
 
 def make_env():
-    env = BOEnv(
-        device="cuda",
+    env = BatchedBOEnv(
+        device='cuda',
         dtype=torch.float32,
-        num_batches=4,
-        #candidate_factory=CandidateFactory,
-        #gp_factory=GPFactory,
-        #objective_fn=BlackBoxFunc(not_too_easy_unique_opt, torch.pi), 
-        n_candidates=100,
+        num_batches=128,
+        n_candidates=3600,
         n_init=3,
-        budget=500,
-        reward_type="final_neglog_regret"
+        budget=30,
+        max_acquistions=200,
+        reward_type='final_neglog_regret'
     )
     return env
 

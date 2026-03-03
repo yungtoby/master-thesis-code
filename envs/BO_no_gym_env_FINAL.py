@@ -12,7 +12,7 @@ from bo.problems.toy_rbf import ToyRBFProblemFamily
 
 class BatchedBOEnv():
     '''Gymansium environment for one BO episode.'''
-    def __init__(self, device, dtype, num_batches, n_candidates, n_init, budget, reward_type, max_acquistions):
+    def __init__(self, device, dtype, num_batches, n_candidates, n_init, budget, max_acquistions, reward_type):
         # Device and dtype
         self.device = t.device(device)
         self.dtype = dtype
@@ -249,4 +249,22 @@ class BatchedBOEnv():
 
         obs = t.stack([mu, sigma, self.costs, budget, best], dim=-1)    # [B, N, 5]
 
+        return obs
+    
+    def _build_obs_2(self, mu, sigma):
+        B, N = mu.shape
+
+        # normalized local cost
+        cost = self.costs / self.budget
+
+        # global progress (time spent fraction) or remaining fraction
+        progress = (1.0 - self.remaining_budget / self.budget).unsqueeze(1).expand(B, N)
+
+        # best so far
+        best = self.best_current_value.unsqueeze(1).expand(B, N)
+
+        # global max cost baseline (normalized)
+        max_cost = (self.costs.max(dim=1).values / self.budget).unsqueeze(1).expand(B, N)
+
+        obs = t.stack([mu, sigma, cost, progress, best, max_cost], dim=-1)  # [B,N,6]
         return obs
