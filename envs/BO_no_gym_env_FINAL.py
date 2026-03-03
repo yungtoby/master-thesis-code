@@ -6,12 +6,13 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))    
 import torch as t
 from bo.gaussian_process_batch_FINAL import MaskedGPWrapper
 from bo.candidate_set_batch import BatchedCandidateSet
+from bo.problems.toy_rbf import ToyRBFProblemFamily
 
 
 
 class BatchedBOEnv():
     '''Gymansium environment for one BO episode.'''
-    def __init__(self, device, dtype, num_batches, n_candidates, n_init, budget, reward_type, max_acquistions, objective_fn):
+    def __init__(self, device, dtype, num_batches, n_candidates, n_init, budget, reward_type, max_acquistions):
         # Device and dtype
         self.device = t.device(device)
         self.dtype = dtype
@@ -25,7 +26,8 @@ class BatchedBOEnv():
         self.reward_type = reward_type 
         self.T_max = self.n_init + max_acquistions
         self.last_obs = None
-        self.objective_fn = objective_fn
+        self.problem_family = None
+        self.params = None
 
         # RL specifics (observation and action space)
         self.observation_dim = (num_batches, n_candidates, 5)
@@ -37,7 +39,8 @@ class BatchedBOEnv():
         self.ep_return = None
         self.ep_len = None
         self.best_current_value = None
-        self.done = False
+        self.done = None
+
 
 
     def reset(self, seed, deterministic):
@@ -46,19 +49,32 @@ class BatchedBOEnv():
         t.manual_seed(seed)
         t.backends.cudnn.deterministic = deterministic
 
-        # Initialize Candidate set, costs
+
+        # Initialize Candidate set
         self.candidate_set = BatchedCandidateSet(
             device=self.device,
             dtype=self.dtype,
-            B=self.B,
-            res=100,
+            B=self.num_batches,
+            res=60,
             D=2,
             minimum=0,
             maximum=10
         )
-        self.X = self.candidate_set.get_grid()
 
-        self.costs, self.lane_params = ...  # TODO: Needs work
+        self.X = self.candidate_set.get_grid()
+        
+        assert self.X.shape[1] == self.n_candidates
+
+        # Initialize cost and objective func params
+        self.problem_family = ToyRBFProblemFamily(
+            device=self.device,
+            dtype=self.dtype,
+            lb = [0, 0],
+            ub = [10, 10]
+        )
+
+        self.params = self.problem_family.sample_params(B=self.num_batches, seed=seed) 
+        self.costs = self.problem_family.costs(self.X, self.params)
 
         # And gaussian process   
         d = self.X.shape[-1]
@@ -93,36 +109,68 @@ class BatchedBOEnv():
         return obs, {}
     
 
-    def _sample_init_design(self):
-        '''Sample the n_init number of initial training points'''
-        # Choose n_init random indices from length N
-        _, N, _ = self.X.shape
-        idx = t.randperm(N, device=self.device)[: self.n_init]
 
-        # Choose the following from X and evaluate on objective function.
-        train_x = self.X[:, idx, :]
-        train_y = self.objective_fn.evaluate(train_x).squeeze(-1) # TODO: fiks objective func logic
+    def _sample_init_design(self, lane_mask=None):
+        '''
+        Sample the n_init number of initial training points
+        for lanes chosen by lane_mask (Default: all lanes)
+        '''
+        # Choose n_init random indices from length N
+        B, N, d = self.X.shape
+
+        if lane_mask is None:
+            lane_mask = t.ones((B,), device=self.device, dtype=t.bool)
+
+        lanes = t.where(lane_mask)[0]
+        
+        # Saftery in case it is called with 0 mask
+        if lanes.numel() == 0:
+            return train_x, train_y
+        
+        # Allocate full-shaped outputs
+        train_x = t.zeros((B, self.n_init, d), device=self.device, dtype=self.dtype)
+        train_y = t.zeros((B, self.n_init), device=self.device, dtype=self.dtype)
+
+        # Choose init indices (shared across lanes for simplicity)
+        idx = t.randperm(N, device=self.device)[: self.n_init]  # [n_init]
+
+        # Fill only selected lanes
+        train_x[lanes] = self.X[lanes][:, idx, :]  # [n_lanes, n_init, d]
+
+        # Evaluate only selected lanes using matching params slice
+        params_lanes = {k: v[lanes] for k, v in self.params.items()}
+        y = self.problem_family.evaluate(train_x[lanes], params_lanes).squeeze(-1)  # [n_lanes, n_init]
+        train_y[lanes] = y
 
         return train_x, train_y
     
+
 
     def _reset_lanes(self, lane_mask):
         # Find which lanes to reset, if none, return
         lanes = t.where(lane_mask)[0]
         if lanes.numel() == 0:
             return
-        
+
         # Regenerate candidates for these lanes
-        X_new, c_new = self._initialize_candidate_factory(lane_mask) # TODO: init candidate factory for mask
-        self.X[lanes] = X_new[lanes]
-        self.costs[lanes] = c_new[lanes]
+        self.candidate_set.reset_lanes(lane_mask)
+        self.X = self.candidate_set.get_grid()
+
+        # Regenerate params for these lanes
+        new_params = self.problem_family.sample_params(B=lanes.numel())
+        for k in self.params:
+            self.params[k][lanes] = new_params[k]
+
+        # Recompute cost for these lanes
+        params_lanes = {k: v[lanes] for k,v in self.params.items()}
+        self.costs[lanes] = self.problem_family.costs(self.X[lanes], params_lanes)
 
         # Reset budget / done
         self.remaining_budget[lanes] = self.budget
         self.done[lanes] = False
 
         # New init design and load into GP buffers
-        x_init, y_init = self._sample_init_design(lane_mask) # TODO: Sample init design needs to accept lane mask
+        x_init, y_init = self._sample_init_design(lane_mask) 
         self.gp.set_lane_data(lane_mask, x_init, y_init)
         self.gp.train()
 
@@ -134,6 +182,7 @@ class BatchedBOEnv():
     def step(self, actions):
         B, _, d = self.X.shape
         active = ~self.done
+        actions = actions.to(dtype=t.long)
 
         # Default outputs 
         reward = t.zeros((B,),  device=self.device, dtype=self.dtype)
@@ -151,8 +200,9 @@ class BatchedBOEnv():
 
             # Evaluate for active lanes 
             y = t.zeros((B,1), device=self.device, dtype=self.dtype)
-            y[active] = self.objective_fn.evaluate(x[active])
-            y1 = y.squeeze(1) # Dim: [B]
+            params_active = {k: v[active] for k, v in self.params.items()}
+            y[active] = self.problem_family.evaluate(x[active], params_active).squeeze(-1)
+            y1 = y.squeeze(1)
 
             # Add data for the active lanes
             self.gp.add_data(x, y, active_mask=active)
@@ -166,8 +216,8 @@ class BatchedBOEnv():
         # Terminal mask for PPO, which lanes ended THIS step
         terminal = self.done.clone()
 
-        if (self.reward_type == "final_neglog_regret") and (terminal.any()):
-            ground_truth = self._get_true_optimum_value() # TODO: Needs extra fixing!
+        if (self.reward_type == "final_neglog_regret") and terminal.any():
+            ground_truth = self.problem_family.optimal_value_on_grid(self.X, self.params) 
             regret = ground_truth - self.best_current_value
             reward[terminal] = -t.log(t.clamp(regret[terminal], min=1e-12))
 
@@ -181,7 +231,6 @@ class BatchedBOEnv():
 
 
 
-
     def _gp_predict_on_candidates(self):
         with t.no_grad():
             pred = self.gp.predict(self.X)  
@@ -189,6 +238,7 @@ class BatchedBOEnv():
             sigma = pred.stddev
 
         return mu, sigma
+
 
 
     def _build_obs(self, mu, sigma):
@@ -200,7 +250,3 @@ class BatchedBOEnv():
         obs = t.stack([mu, sigma, self.costs, budget, best], dim=-1)    # [B, N, 5]
 
         return obs
-
-
-    def _get_true_optimum_value(self):
-        return self.objective_fn.get_optimal_value()

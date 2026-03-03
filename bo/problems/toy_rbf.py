@@ -116,7 +116,7 @@ class ToyRBFProblemFamily(BaseProblemFamily):
 
 
     def costs(self, X, params):
-        """
+        '''
         Compute a positive, smooth cost surface per lane.
 
         We use:
@@ -125,7 +125,7 @@ class ToyRBFProblemFamily(BaseProblemFamily):
 
         X:      [B, N, d]
         returns [B, N]
-        """
+        '''
         p = params["p"]          # [B, d]
         alpha = params["alpha"]  # [B, 1]
         beta = params["beta"]    # [B, d]
