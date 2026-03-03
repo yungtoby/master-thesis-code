@@ -123,13 +123,13 @@ class BatchedBOEnv():
 
         lanes = t.where(lane_mask)[0]
         
-        # Saftery in case it is called with 0 mask
-        if lanes.numel() == 0:
-            return train_x, train_y
-        
         # Allocate full-shaped outputs
         train_x = t.zeros((B, self.n_init, d), device=self.device, dtype=self.dtype)
         train_y = t.zeros((B, self.n_init), device=self.device, dtype=self.dtype)
+
+        # Saftery in case it is called with 0 mask
+        if lanes.numel() == 0:
+            return train_x, train_y
 
         # Choose init indices (shared across lanes for simplicity)
         idx = t.randperm(N, device=self.device)[: self.n_init]  # [n_init]

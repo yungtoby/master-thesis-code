@@ -15,6 +15,7 @@ class ToyRBFProblemFamily(BaseProblemFamily):
         to the problem. Aswell as the total number components (M) in the
         toy objective and a minimum cost (min_cost).
         '''
+        super().__init__(device=device, dtype=dtype)
         self.device = device
         self.dtype = dtype
 

@@ -6,8 +6,8 @@ import torch as t
 Params = Dict[str, t.Tensor]
 
 class BaseProblemFamily(ABC):
-    def __init__(self, device: str | t.device, dtype: t.dtype):
-        self.device = t.device(device)
+    def __init__(self, device: t.device, dtype: t.dtype):
+        self.device = device
         self.dtype = dtype
 
     @abstractmethod
