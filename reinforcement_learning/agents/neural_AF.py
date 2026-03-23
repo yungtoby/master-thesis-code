@@ -20,20 +20,20 @@ class Agent(nn.Module):
         self.critic = self.initialize_mlp(in_features_cri, out_features_cri)
 
 
-    def get_value(self, x):
-        return self.critic(x).squeeze(-1)
+    def get_value(self, obs):
+        return self.critic(obs[:, 0 ,3:6]).squeeze(-1)
 
 
     def get_logits(self, obs):
         return self.actor(obs).squeeze(-1)
 
 
-    def get_action_value(self, obs, action=None):
+    def get_action_and_value(self, obs, action=None):
         dist = Categorical(logits=self.get_logits(obs))
         if action is None:
             action=dist.sample()
         
-        return action, dist.log_prob(action), dist.entropy(), self.get_value(obs[:, 0, 3:6])
+        return action, dist.log_prob(action), dist.entropy(), self.get_value(obs)
 
 
     def initialize_mlp(self, in_features, out_features):

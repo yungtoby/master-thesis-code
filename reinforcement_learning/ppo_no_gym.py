@@ -113,7 +113,7 @@ if __name__ == "__main__":
     B, N, d = next_obs.shape
 
     # Agent setup
-    agent = Agent(d, d/2, 1, 1, 4, 200).to(device)
+    agent = Agent(d, int(d/2), 1, 1, 4, 200).to(device)
     optimizer = optim.Adam(agent.parameters(), lr=args['learning_rate'], eps=1e-5)
 
     # ALGO Logic: Storage setup
