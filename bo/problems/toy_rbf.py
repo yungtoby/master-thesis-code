@@ -1,5 +1,5 @@
 import torch as t
-from base import BaseProblemFamily
+from bo.problems.base import BaseProblemFamily
 
 
 class ToyRBFProblemFamily(BaseProblemFamily):

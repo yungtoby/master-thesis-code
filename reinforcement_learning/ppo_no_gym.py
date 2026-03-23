@@ -8,7 +8,6 @@
 
 ################### QUICK FIX FOR IMPORTS: ############################################ 
 import os, sys                                                                        #
-print(f'NAME: --- {os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}')     #
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))          #
 #######################################################################################
 
@@ -35,8 +34,8 @@ args = {
     'cuda' : True,
     'track' : False,
     'capture_video' : False,
-    'env_id' : "RL-BO-v0.1",
-    'total_timesteps' : 500000,
+    'env_id' : "COST-AWARE-BO-PROTOTYPE",
+    'total_timesteps' : 50000,
     'learning_rate' : 2.5e-4,
     'num_envs' : 128,
     'num_steps' : 32,
@@ -64,7 +63,7 @@ def make_env():
         device='cuda',
         dtype=torch.float32,
         num_batches=args['num_envs'],
-        n_candidates=3600,
+        n_candidates=900,
         n_init=3,
         budget=30,
         max_acquistions=200,
@@ -103,7 +102,7 @@ if __name__ == "__main__":
 
     # Selecting device
     device = torch.device('cuda' if torch.cuda.is_available() and args['cuda'] else 'cpu')
-
+    print(f"Using device {device}")
 
     # Environement setup 
     env = make_env()
@@ -113,7 +112,7 @@ if __name__ == "__main__":
     B, N, d = next_obs.shape
 
     # Agent setup
-    agent = Agent(d, int(d/2), 1, 1, 4, 200).to(device)
+    agent = Agent(d, int(d/2), 1, 1, 3, 64).to(device)
     optimizer = optim.Adam(agent.parameters(), lr=args['learning_rate'], eps=1e-5)
 
     # ALGO Logic: Storage setup
@@ -155,10 +154,16 @@ if __name__ == "__main__":
 
             if "final_info" in infos:
                 for info in infos["final_info"]:
-                    if info and "episode" in info:
-                        print(f"global_step={global_step}, episodic_return={info['episode']['r']}")
-                        writer.add_scalar("charts/episodic_return", info["episode"]["r"], global_step)
-                        writer.add_scalar("charts/episodic_length", info["episode"]["l"], global_step)
+                    if info is not None:
+                        if "episode" in info:
+                            writer.add_scalar("charts/episodic_return", info["episode"]["r"], global_step)
+                            writer.add_scalar("charts/episodic_length", info["episode"]["l"], global_step)
+
+                        if "regret" in info:
+                            writer.add_scalar("eval/final_regret", info["regret"], global_step)
+
+                        if "best_value" in info:
+                            writer.add_scalar("eval/best_value", info["best_value"], global_step)
 
         # bootstrap value if not done
         with torch.no_grad():
@@ -168,7 +173,7 @@ if __name__ == "__main__":
 
             for t in reversed(range(args['num_steps'])):
                 if t == args['num_steps'] - 1:
-                    nextnonterminal = 1.0 - next_done
+                    nextnonterminal = 1.0 - next_done.float()
                     nextvalues = next_value
                 else:
                     nextnonterminal = 1.0 - dones[t + 1]
@@ -252,6 +257,7 @@ if __name__ == "__main__":
         writer.add_scalar("losses/approx_kl", approx_kl.item(), global_step)
         writer.add_scalar("losses/clipfrac", np.mean(clipfracs), global_step)
         writer.add_scalar("losses/explained_variance", explained_var, global_step)
+        print(f"Total time used: {(time.time() - start_time)/60:.2f} min")
         print("SPS:", int(global_step / (time.time() - start_time)))
         writer.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
 

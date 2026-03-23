@@ -55,7 +55,7 @@ class BatchedBOEnv():
             device=self.device,
             dtype=self.dtype,
             B=self.num_batches,
-            res=60,
+            res=30,
             D=2,
             minimum=0,
             maximum=10
@@ -277,7 +277,7 @@ class BatchedBOEnv():
 
     #    return obs
     
-    
+
     def _build_obs(self, mu, sigma):
         B, N = mu.shape
 
