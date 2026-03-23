@@ -4,11 +4,15 @@
 #########################################################################################################################
 # docs and experiment results can be found at https://docs.cleanrl.dev/rl-algorithms/ppo/#ppopy
 
+
+
 ################### QUICK FIX FOR IMPORTS: ############################################ 
 import os, sys                                                                        #
 print(f'NAME: --- {os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}')     #
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))          #
 #######################################################################################
+
+
 
 # IMPORTS
 import os
@@ -22,6 +26,8 @@ from torch.distributions.categorical import Categorical
 from torch.utils.tensorboard import SummaryWriter
 from envs.BO_no_gym_env_FINAL import BatchedBOEnv
 
+
+
 # CURRENT PLACEHOLDER FOR ARGS COMMAND USED BY CLEANRL
 args = {
     'exp_name' : os.path.basename(__file__)[: -len(".py")],
@@ -33,8 +39,8 @@ args = {
     'env_id' : "RL-BO-v0.1",
     'total_timesteps' : 500000,
     'learning_rate' : 2.5e-4,
-    'num_envs' : 4,
-    'num_steps' : 128,
+    'num_envs' : 128,
+    'num_steps' : 32,
     'anneal_lr' : True,
     'gamma' : 0.99,
     'gae_lambda' : 0.95,
@@ -53,11 +59,12 @@ args = {
 }
 
 
+
 def make_env():
     env = BatchedBOEnv(
         device='cuda',
         dtype=torch.float32,
-        num_batches=128,
+        num_batches=args['num_envs'],
         n_candidates=3600,
         n_init=3,
         budget=30,
@@ -67,11 +74,11 @@ def make_env():
     return env
 
 
+
 def layer_init(layer, std=np.sqrt(2), bias_const=0.0):
     torch.nn.init.orthogonal_(layer.weight, std)
     torch.nn.init.constant_(layer.bias, bias_const)
     return layer
-
 
 # TODO: Switch with own agent
 class Agent(nn.Module):
@@ -92,10 +99,8 @@ class Agent(nn.Module):
             layer_init(nn.Linear(64, envs.single_action_space.n), std=0.01),
         )
 
-
     def get_value(self, x):
         return self.critic(x)
-
 
     def get_action_and_value(self, x, action=None):
         logits = self.actor(x)
@@ -103,6 +108,7 @@ class Agent(nn.Module):
         if action is None:
             action = probs.sample()
         return action, probs.log_prob(action), probs.entropy(), self.critic(x)
+
 
 
 
@@ -139,28 +145,28 @@ if __name__ == "__main__":
 
 
     # Environement setup 
-    # TODO: FIX ENV + AGENT
     env = make_env()
+    
+    # START PPO:
+    next_obs, _ = env.reset(seed=args['seed'], deterministic=args['torch_deterministic'])
+    B, N, d = next_obs.shape
 
     # Agent setup
     agent = Agent(env).to(device)
     optimizer = optim.Adam(agent.parameters(), lr=args['learning_rate'], eps=1e-5)
 
-
     # ALGO Logic: Storage setup
-    obs = torch.zeros((args['num_steps'], args['num_envs']) + env.single_observation_space.shape).to(device)
-    actions = torch.zeros((args['num_steps'], args['num_envs']) + env.single_action_space.shape).to(device)
-    logprobs = torch.zeros((args['num_steps'], args['num_envs'])).to(device)
-    rewards = torch.zeros((args['num_steps'], args['num_envs'])).to(device)
-    dones = torch.zeros((args['num_steps'], args['num_envs'])).to(device)
-    values = torch.zeros((args['num_steps'], args['num_envs'])).to(device)
+    obs = torch.zeros((args['num_steps'], B, N, d), dtype=next_obs.dtype, device=device)
+    actions = torch.zeros((args['num_steps'], B), dtype=torch.long, device=device)
+    logprobs = torch.zeros((args['num_steps'], B), dtype=next_obs.dtype, device=device)
+    rewards = torch.zeros((args['num_steps'], B), dtype=next_obs.dtype, device=device)
+    dones = torch.zeros((args['num_steps'], B), dtype=next_obs.dtype, device=device)
+    values = torch.zeros((args['num_steps'], B), dtype=next_obs.dtype, device=device)
+    next_done = torch.zeros(B, dtype=next_obs.dtype, device=device)
 
     # TRY NOT TO MODIFY: start the game
     global_step = 0
     start_time = time.time()
-    next_obs, _ = env.reset(seed=args['seed'], deterministic=args['torch_deterministic'])
-    next_obs = torch.Tensor(next_obs).to(device)
-    next_done = torch.zeros(args['num_envs']).to(device)
 
     for iteration in range(1, args['num_iterations'] + 1):
         # Annealing the rate if instructed to do so.
@@ -182,10 +188,9 @@ if __name__ == "__main__":
             logprobs[step] = logprob
 
             # TRY NOT TO MODIFY: execute the game and log data.
-            next_obs, reward, terminations, truncations, infos = env.step(action.cpu().numpy())
-            next_done = np.logical_or(terminations, truncations)
-            rewards[step] = torch.tensor(reward).to(device).view(-1)
-            next_obs, next_done = torch.Tensor(next_obs).to(device), torch.Tensor(next_done).to(device)
+            next_obs, reward, terminals, infos = env.step(action)
+            next_done = terminals
+            rewards[step] = reward.view(-1)
 
             if "final_info" in infos:
                 for info in infos["final_info"]:
@@ -211,9 +216,9 @@ if __name__ == "__main__":
             returns = advantages + values
 
         # flatten the batch
-        b_obs = obs.reshape((-1,) + env.single_observation_space.shape)
+        b_obs = obs.reshape((-1, N, d))
         b_logprobs = logprobs.reshape(-1)
-        b_actions = actions.reshape((-1,) + env.single_action_space.shape)
+        b_actions = actions.reshape((-1,))
         b_advantages = advantages.reshape(-1)
         b_returns = returns.reshape(-1)
         b_values = values.reshape(-1)
