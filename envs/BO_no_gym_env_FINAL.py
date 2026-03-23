@@ -267,17 +267,18 @@ class BatchedBOEnv():
 
 
 
-    def _build_obs(self, mu, sigma):
-        B, N = mu.shape
+    #def _build_obs(self, mu, sigma):
+    #    B, N = mu.shape
 
-        budget = self.remaining_budget.unsqueeze(1).expand(B, N)        # [B] -> [B,N]
-        best   = self.best_current_value.unsqueeze(1).expand(B, N)      # [B] -> [B,N]
+    #    budget = self.remaining_budget.unsqueeze(1).expand(B, N)        # [B] -> [B,N]
+    #    best   = self.best_current_value.unsqueeze(1).expand(B, N)      # [B] -> [B,N]
 
-        obs = t.stack([mu, sigma, self.costs, budget, best], dim=-1)    # [B, N, 5]
+    #    obs = t.stack([mu, sigma, self.costs, budget, best], dim=-1)    # [B, N, 5]
 
-        return obs
+    #    return obs
     
-    def _build_obs_2(self, mu, sigma):
+    
+    def _build_obs(self, mu, sigma):
         B, N = mu.shape
 
         # normalized local cost

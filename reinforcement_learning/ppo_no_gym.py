@@ -22,10 +22,9 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.distributions.categorical import Categorical
 from torch.utils.tensorboard import SummaryWriter
 from envs.BO_no_gym_env_FINAL import BatchedBOEnv
-
+from reinforcement_learning.agents.neural_AF import Agent
 
 
 # CURRENT PLACEHOLDER FOR ARGS COMMAND USED BY CLEANRL
@@ -75,44 +74,6 @@ def make_env():
 
 
 
-def layer_init(layer, std=np.sqrt(2), bias_const=0.0):
-    torch.nn.init.orthogonal_(layer.weight, std)
-    torch.nn.init.constant_(layer.bias, bias_const)
-    return layer
-
-# TODO: Switch with own agent
-class Agent(nn.Module):
-    def __init__(self, envs):
-        super().__init__()
-        self.critic = nn.Sequential(
-            layer_init(nn.Linear(np.array(envs.single_observation_space.shape).prod(), 64)),
-            nn.Tanh(),
-            layer_init(nn.Linear(64, 64)),
-            nn.Tanh(),
-            layer_init(nn.Linear(64, 1), std=1.0),
-        )
-        self.actor = nn.Sequential(
-            layer_init(nn.Linear(np.array(envs.single_observation_space.shape).prod(), 64)),
-            nn.Tanh(),
-            layer_init(nn.Linear(64, 64)),
-            nn.Tanh(),
-            layer_init(nn.Linear(64, envs.single_action_space.n), std=0.01),
-        )
-
-    def get_value(self, x):
-        return self.critic(x)
-
-    def get_action_and_value(self, x, action=None):
-        logits = self.actor(x)
-        probs = Categorical(logits=logits)
-        if action is None:
-            action = probs.sample()
-        return action, probs.log_prob(action), probs.entropy(), self.critic(x)
-
-
-
-
-
 
 if __name__ == "__main__":
     # Calculating batch size, minibatch size and number of iterations
@@ -152,7 +113,7 @@ if __name__ == "__main__":
     B, N, d = next_obs.shape
 
     # Agent setup
-    agent = Agent(env).to(device)
+    agent = Agent(d, d/2, 1, 1, 4, 200).to(device)
     optimizer = optim.Adam(agent.parameters(), lr=args['learning_rate'], eps=1e-5)
 
     # ALGO Logic: Storage setup

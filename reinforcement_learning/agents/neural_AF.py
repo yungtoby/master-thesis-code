@@ -1,6 +1,51 @@
-import torch as t
+from torch.distributions import Categorical
 from torch import nn
 
-class Agent(nn.module):
+
+class Agent(nn.Module):
     '''Actor Critic Network ...'''
-    pass
+    def __init__(self, in_features_act, in_features_cri, out_features_act, out_features_cri, num_layers, layer_size):
+        super(Agent, self).__init__()
+
+        self.in_features_act = in_features_act
+        self.in_features_cri = in_features_cri
+
+        self.out_features_act = out_features_act
+        self.out_features_cri = out_features_cri
+
+        self.num_layers = num_layers
+        self.layer_size = layer_size
+
+        self.actor = self.initialize_mlp(in_features_act, out_features_act)
+        self.critic = self.initialize_mlp(in_features_cri, out_features_cri)
+
+
+    def get_value(self, x):
+        return self.critic(x).squeeze(-1)
+
+
+    def get_logits(self, obs):
+        return self.actor(obs).squeeze(-1)
+
+
+    def get_action_value(self, obs, action=None):
+        dist = Categorical(logits=self.get_logits(obs))
+        if action is None:
+            action=dist.sample()
+        
+        return action, dist.log_prob(action), dist.entropy(), self.get_value(obs[:, 0, 3:6])
+
+
+    def initialize_mlp(self, in_features, out_features):
+        layers = []
+        for i in range(self.num_layers):
+            if i == 0:
+                layers.append(nn.Linear(in_features, self.layer_size))
+                layers.append(nn.ReLU())
+            elif i == self.num_layers - 1:
+                layers.append(nn.Linear(self.layer_size, out_features))
+            else:
+                layers.append(nn.Linear(self.layer_size, self.layer_size))
+                layers.append(nn.ReLU())
+
+        return nn.Sequential(*layers)
