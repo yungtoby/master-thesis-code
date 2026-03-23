@@ -103,10 +103,10 @@ class BatchedBOEnv():
         obs = self._build_obs(*self._gp_predict_on_candidates())
         self.last_obs = obs
 
-        # self.ep_return = t.zeros((self.num_batches,), device=self.device, dtype=self.dtype) # TODO: Needs fixing
-        # self.ep_len = t.zeros((self.num_batches,), device=self.device, dtype=self.dtype) 
+        self.ep_return = t.zeros((self.num_batches,), device=self.device, dtype=self.dtype) 
+        self.ep_len = t.zeros((self.num_batches,), device=self.device, dtype=t.long) 
 
-        return obs, {}
+        return obs
     
 
 
@@ -169,6 +169,10 @@ class BatchedBOEnv():
         self.remaining_budget[lanes] = self.budget
         self.done[lanes] = False
 
+        # Reset info
+        self.ep_return[lanes] = 0.0
+        self.ep_len[lanes] = 0
+
         # New init design and load into GP buffers
         x_init, y_init = self._sample_init_design(lane_mask) 
         self.gp.set_lane_data(lane_mask, x_init, y_init)
@@ -221,7 +225,29 @@ class BatchedBOEnv():
             regret = ground_truth - self.best_current_value
             reward[terminal] = -t.log(t.clamp(regret[terminal], min=1e-12))
 
+        self.ep_return[active] += reward[active]
+        self.ep_len[active] += 1
+
+        info = {}
+
         if terminal.any():
+            final_info = [None] * B
+            terminal_lanes = t.where(terminal)[0]
+
+            ground_truth = self.problem_family.optimal_value_on_grid(self.X, self.params)
+            regret = ground_truth - self.best_current_value
+
+            for i in terminal_lanes.tolist():
+                final_info[i] = {
+                    "episode": {
+                        "r": self.ep_return[i].item(),
+                        "l": int(self.ep_len[i].item()),
+                    },
+                    "regret": regret[i].item(),
+                    "best_value": self.best_current_value[i].item(),
+                }
+
+            info["final_info"] = final_info
             self._reset_lanes(terminal)
 
         obs = self._build_obs(*self._gp_predict_on_candidates())

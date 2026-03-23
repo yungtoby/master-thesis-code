@@ -148,7 +148,7 @@ if __name__ == "__main__":
     env = make_env()
     
     # START PPO:
-    next_obs, _ = env.reset(seed=args['seed'], deterministic=args['torch_deterministic'])
+    next_obs = env.reset(seed=args['seed'], deterministic=args['torch_deterministic'])
     B, N, d = next_obs.shape
 
     # Agent setup
@@ -202,9 +202,9 @@ if __name__ == "__main__":
         # bootstrap value if not done
         with torch.no_grad():
             next_value = agent.get_value(next_obs).reshape(-1)
-            advantages = torch.zeros_like(rewards).to(device)
+            advantages = torch.zeros_like(rewards)
             lastgaelam = torch.zeros(B, dtype=next_obs.dtype, device=device)
-            
+
             for t in reversed(range(args['num_steps'])):
                 if t == args['num_steps'] - 1:
                     nextnonterminal = 1.0 - next_done
