@@ -201,9 +201,10 @@ if __name__ == "__main__":
 
         # bootstrap value if not done
         with torch.no_grad():
-            next_value = agent.get_value(next_obs).reshape(1, -1)
+            next_value = agent.get_value(next_obs).reshape(-1)
             advantages = torch.zeros_like(rewards).to(device)
-            lastgaelam = 0
+            lastgaelam = torch.zeros(B, dtype=next_obs.dtype, device=device)
+            
             for t in reversed(range(args['num_steps'])):
                 if t == args['num_steps'] - 1:
                     nextnonterminal = 1.0 - next_done
@@ -293,6 +294,4 @@ if __name__ == "__main__":
         print("SPS:", int(global_step / (time.time() - start_time)))
         writer.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
 
-
-    env.close()
     writer.close()
