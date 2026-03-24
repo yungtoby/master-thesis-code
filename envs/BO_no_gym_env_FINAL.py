@@ -4,7 +4,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))    
 #######################################################################################
 
 import torch as t
-from bo.gaussian_process_batch_FINAL import MaskedGPWrapper
+from bo.gaussian_process_batch_FINAL import RepeatedPadGPWrapper # MaskedGPWrapper
 from bo.candidate_set_batch import BatchedCandidateSet
 from bo.problems.toy_rbf import ToyRBFProblemFamily
 
@@ -30,7 +30,7 @@ class BatchedBOEnv():
         self.params = None
 
         # RL specifics (observation and action space)
-        self.observation_dim = (num_batches, n_candidates, 5)
+        self.observation_dim = (num_batches, n_candidates, 6)
 
         # Internal state
         self.X = None
@@ -78,21 +78,20 @@ class BatchedBOEnv():
 
         # And gaussian process   
         d = self.X.shape[-1]
-        self.gp = MaskedGPWrapper(
+        self.gp = RepeatedPadGPWrapper(
             device=self.device,
             dtype=self.dtype,
             B=self.num_batches,
             T_max=self.T_max,
             d=d,
-            base_noise=1e-4,
-            lr=1e-2,
+            lr=1e-3,
             training_iter=10
         )                               
 
         # Initialize initial points for each lane in the batch
         x_init, y_init = self._sample_init_design()
         self.gp.set_lane_data(t.ones((self.num_batches,), device=self.device, dtype=t.bool), x_init, y_init)
-        self.gp.train()
+        #self.gp.train()
                 
         # Reset environment scalars and find best current values among init
         self.remaining_budget = t.full((self.num_batches,), self.budget, device=self.device, dtype=self.dtype)
@@ -176,7 +175,7 @@ class BatchedBOEnv():
         # New init design and load into GP buffers
         x_init, y_init = self._sample_init_design(lane_mask) 
         self.gp.set_lane_data(lane_mask, x_init, y_init)
-        self.gp.train()
+        #self.gp.train()
 
         # Update best current values after new init
         self.best_current_value[lanes] = y_init[lanes].max(dim=1).values
@@ -210,7 +209,7 @@ class BatchedBOEnv():
 
             # Add data for the active lanes
             self.gp.add_data(x, y, active_mask=active)
-            self.gp.train()
+            #self.gp.train()
 
             # Update state for active lanes in the batch
             self.best_current_value[active] = t.maximum(self.best_current_value[active], y1[active])
