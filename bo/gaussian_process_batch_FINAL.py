@@ -128,7 +128,7 @@ class RepeatedPadGPWrapper:
         return min(current_max, self.T_max)
 
 
-    def _build_and_fit_model(self, train_x, train_y):
+    def _build_and_fit_gp(self, train_x, train_y):
         batch_shape = t.Size([self.B])
 
         likelihood = gpy.likelihoods.GaussianLikelihood(
@@ -141,7 +141,7 @@ class RepeatedPadGPWrapper:
             batch_shape=batch_shape,
         )
 
-        model = GaussianProcess(
+        gp = GaussianProcess(
             train_x=train_x,
             train_y=train_y,
             likelihood=likelihood,
@@ -150,25 +150,25 @@ class RepeatedPadGPWrapper:
         ).to(self.device)
 
         likelihood.noise_covar.register_constraint("raw_noise", gpy.constraints.GreaterThan(1e-4)) # FOR NUMERICAL STABILITY.
-        optimizer = t.optim.Adam(model.parameters(), lr=self.lr)
-        mll = gpy.mlls.ExactMarginalLogLikelihood(likelihood, model)
+        optimizer = t.optim.Adam(gp.parameters(), lr=self.lr)
+        mll = gpy.mlls.ExactMarginalLogLikelihood(likelihood, gp)
 
-        model.train()
+        gp.train()
         likelihood.train()
 
         for _ in range(self.training_iter):
             optimizer.zero_grad()
-            output = model(train_x)
+            output = gp(train_x)
             loss = -mll(output, train_y).sum()
 
             if not t.isfinite(loss):
                 raise RuntimeError("Non-finite GP loss encountered.")
 
             loss.backward()
-            t.nn.utils.clip_grad_norm_(model.parameters(), max_norm=10.0) # FOR NUMERICAL STABILITY.
+            t.nn.utils.clip_grad_norm_(gp.parameters(), max_norm=10.0) # FOR NUMERICAL STABILITY.
             optimizer.step()
 
-        return model, likelihood
+        return gp, likelihood
 
 
     def predict(self, x):
@@ -179,17 +179,20 @@ class RepeatedPadGPWrapper:
             sigma: [B, N]
         """
         train_x_eq, train_y_eq = self._repeat_pad_prefixes()
-        model, likelihood = self._build_and_fit_model(train_x_eq, train_y_eq)
+        gp, likelihood = self._build_and_fit_gp(train_x_eq, train_y_eq)
 
-        model.eval()
+        gp.eval()
         likelihood.eval()
 
         with t.no_grad(), gpy.settings.fast_pred_var():
-            posterior = model(x)  # latent posterior
-            mu = posterior.mean
-            sigma = posterior.variance.clamp_min(1e-12).sqrt()
+            return likelihood(gp(x))
 
-        return mu, sigma
+        #with t.no_grad(), gpy.settings.fast_pred_var():
+        #    posterior = gp(x)  # latent posterior
+        #    mu = posterior.mean
+        #    sigma = posterior.variance.clamp_min(1e-12).sqrt()
+
+        #return mu, sigma
 
 
 

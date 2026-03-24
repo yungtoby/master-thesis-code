@@ -257,10 +257,9 @@ class BatchedBOEnv():
 
 
     def _gp_predict_on_candidates(self):
-        with t.no_grad():
-            pred = self.gp.predict(self.X)  
-            mu = pred.mean      
-            sigma = pred.stddev
+        pred = self.gp.predict(self.X)  
+        mu = pred.mean      
+        sigma = pred.stddev
 
         return mu, sigma
 
