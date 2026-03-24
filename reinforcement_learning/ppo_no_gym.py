@@ -35,22 +35,22 @@ args = {
     'track' : False,
     'capture_video' : False,
     'env_id' : "COST-AWARE-BO-PROTOTYPE",
-    'total_timesteps' : 50000,
-    'learning_rate' : 2.5e-4,
-    'num_envs' : 128,
+    'total_timesteps' : 5000000,
+    'learning_rate' : 1e-4,
+    'num_envs' : 256,
     'num_steps' : 32,
     'anneal_lr' : True,
-    'gamma' : 0.99,
-    'gae_lambda' : 0.95,
+    'gamma' : 1,
+    'gae_lambda' : 0.98,
     'num_minibatches' : 4,
     'update_epochs' : 4,
     'norm_adv' : True,
     'clip_coef' : 0.2,
     'clip_vloss' : True,
     'ent_coef' : 0.01,
-    'vf_coef' : 0.5,
+    'vf_coef' : 1,
     'max_grad_norm' : 0.5,
-    'target_kl' : None,
+    'target_kl' : 0.3,
     'batch_size': 0,
     'minibatch_size' : 0,
     'num_iterations' : 0
@@ -127,6 +127,12 @@ if __name__ == "__main__":
     # TRY NOT TO MODIFY: start the game
     global_step = 0
     start_time = time.time()
+
+
+    # CHECKPOINT SETUP
+    save_every = 250000
+    next_save_step = save_every
+    os.makedirs("checkpoints", exist_ok=True)
 
     for iteration in range(1, args['num_iterations'] + 1):
         # Annealing the rate if instructed to do so.
@@ -261,4 +267,10 @@ if __name__ == "__main__":
         print("SPS:", int(global_step / (time.time() - start_time)))
         writer.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
 
+        if global_step >= next_save_step:
+            torch.save(agent.state_dict(), f"checkpoints/model_step_{global_step}.pt")
+            next_save_step += save_every
+        
+
+    torch.save(agent.state_dict(), f"checkpoints/model_step_{global_step}.pt")
     writer.close()
