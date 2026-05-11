@@ -22,7 +22,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
-from envs.BO_no_gym_env_FINAL import BatchedBOEnv
+from envs.BO_env import BatchedBOEnv
 from reinforcement_learning.agents.neural_AF import Agent
 
 

@@ -4,7 +4,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))    
 #######################################################################################
 
 import torch as t
-from bo.gaussian_process_batch_FINAL import RepeatedPadGPWrapper # MaskedGPWrapper
+from bo.gaussian_process_batch import RepeatedPadGPWrapper # MaskedGPWrapper
 from bo.candidate_set_batch import BatchedCandidateSet
 from bo.problems.toy_rbf import ToyRBFProblemFamily
 

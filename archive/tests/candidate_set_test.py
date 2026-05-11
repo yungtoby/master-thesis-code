@@ -3,7 +3,7 @@
 ##########################
 def test_candidate_set():
     import torch as t
-    from candidate_set import CandidateSet
+    from archive.candidate_set_OLD import CandidateSet
 
     # Initialize candidate set params:
     
@@ -36,7 +36,7 @@ def test_candidate_set():
 
 def test_candidate_set_GPU():
     import torch as t
-    from candidate_set import CandidateSet
+    from archive.candidate_set_OLD import CandidateSet
 
     # Initialize candidate set params:
     
