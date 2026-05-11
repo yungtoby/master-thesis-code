@@ -4,15 +4,18 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))    
 #######################################################################################
 
 import torch as t
-from bo.gaussian_process_batch import RepeatedPadGPWrapper # MaskedGPWrapper
-from bo.candidate_set_batch import BatchedCandidateSet
-from bo.problems.toy_rbf import ToyRBFProblemFamily
+from bo.gaussian_process_batch import RepeatedPadGPWrapper
+#from bo.candidate_set_batch import BatchedCandidateSet
+#from bo.problems.toy_rbf import ToyRBFProblemFamily
+from bo.candidate_sets import build_candidate_set
+from bo.problems.registry import build_problem_family
 
 
 
 class BatchedBOEnv():
     '''Gymansium environment for one BO episode.'''
-    def __init__(self, device, dtype, num_batches, n_candidates, n_init, budget, max_acquistions, reward_type):
+    def __init__(self, device, dtype, num_batches, n_candidates, n_init, budget, max_acquistions, reward_type,
+                 candidate_set_cfg, problem_family_cfg, gp_cfg):
         # Device and dtype
         self.device = t.device(device)
         self.dtype = dtype
@@ -29,8 +32,10 @@ class BatchedBOEnv():
         self.problem_family = None
         self.params = None
 
-        # RL specifics (observation and action space)
-        self.observation_dim = (num_batches, n_candidates, 6)
+        # Configs
+        self.candidate_set_cfg = candidate_set_cfg
+        self.problem_family_cfg = problem_family_cfg
+        self.gp_cfg = gp_cfg
 
         # Internal state
         self.X = None
@@ -51,14 +56,11 @@ class BatchedBOEnv():
 
 
         # Initialize Candidate set
-        self.candidate_set = BatchedCandidateSet(
+        self.candidate_set = build_candidate_set(
+            self.candidate_set_cfg,
             device=self.device,
             dtype=self.dtype,
             B=self.num_batches,
-            res=30,
-            D=2,
-            minimum=0,
-            maximum=10
         )
 
         self.X = self.candidate_set.get_grid()
@@ -66,32 +68,31 @@ class BatchedBOEnv():
         assert self.X.shape[1] == self.n_candidates
 
         # Initialize cost and objective func params
-        self.problem_family = ToyRBFProblemFamily(
+        self.problem_family = build_problem_family(
+            self.candidate_set_cfg,
             device=self.device,
             dtype=self.dtype,
-            lb = [0, 0],
-            ub = [10, 10]
+            B=self.num_batches,
         )
 
         self.params = self.problem_family.sample_params(B=self.num_batches, seed=seed) 
         self.costs = self.problem_family.costs(self.X, self.params)
 
         # And gaussian process   
-        d = self.X.shape[-1]
+        d = self.X.shape[-1]   
         self.gp = RepeatedPadGPWrapper(
             device=self.device,
             dtype=self.dtype,
             B=self.num_batches,
             T_max=self.T_max,
             d=d,
-            lr=1e-3,
-            training_iter=10
-        )                               
+            lr=self.gp_cfg.get("lr", 1e-3),
+            training_iter=self.gp_cfg.get("training_iter", 10)
+        )
 
         # Initialize initial points for each lane in the batch
         x_init, y_init = self._sample_init_design()
         self.gp.set_lane_data(t.ones((self.num_batches,), device=self.device, dtype=t.bool), x_init, y_init)
-        #self.gp.train()
                 
         # Reset environment scalars and find best current values among init
         self.remaining_budget = t.full((self.num_batches,), self.budget, device=self.device, dtype=self.dtype)
