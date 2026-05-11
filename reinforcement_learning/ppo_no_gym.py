@@ -15,7 +15,6 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))    
 
 # IMPORTS
 import os
-import random
 import time
 import numpy as np
 import argparse
@@ -26,7 +25,7 @@ from torch.utils.tensorboard import SummaryWriter
 from pathlib import Path
 from envs.BO_env import BatchedBOEnv
 from reinforcement_learning.agents.neural_AF import Agent
-from utils.config import load_config, add_derived_ppo_values, save_config_copy
+from utils.config import load_config, save_config_copy
 from utils.seeding import seed_everything
 
 
@@ -136,7 +135,8 @@ if __name__ == "__main__":
     # CHECKPOINT SETUP
     save_every = exp_cfg['save_every']
     next_save_step = save_every
-    os.makedirs("checkpoints", exist_ok=True)
+    checkpoint_dir = Path(exp_cfg.get("checkpoint_dir", "checkpoints"))
+    checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
     for iteration in range(1, ppo_cfg['num_iterations'] + 1):
         # Annealing the rate if instructed to do so.
@@ -272,9 +272,9 @@ if __name__ == "__main__":
         writer.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
 
         if global_step >= next_save_step:
-            torch.save(agent.state_dict(), f"checkpoints/model_step_{global_step}.pt")
+            torch.save(agent.state_dict(), checkpoint_dir / f"model_step_{global_step}.pt")
             next_save_step += save_every
         
 
-    torch.save(agent.state_dict(), f"checkpoints/model_step_{global_step}.pt")
+    torch.save(agent.state_dict(), checkpoint_dir / f"model_step_{global_step}.pt")
     writer.close()
