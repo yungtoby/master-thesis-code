@@ -2,7 +2,7 @@
 # TEST FOR GAUSSIAN PROCESS WRAPPER #
 #####################################
 def test_GP():
-    from gaussian_process import GPWrapper
+    from gaussian_process_OLD import GPWrapper
     import gpytorch as gpy
     import torch as t
     import matplotlib.pyplot as plt
@@ -52,7 +52,7 @@ def test_GP():
 # TEST FOR GAUSSIAN PROCESS WRAPPER REFIT #
 ###########################################
 def test_GP_refit():
-    from gaussian_process import GPWrapper
+    from gaussian_process_OLD import GPWrapper
     import gpytorch as gpy
     import torch as t
     import matplotlib.pyplot as plt
@@ -133,10 +133,10 @@ def test_GP_refit():
 def test_GP_GPU():
     import torch as t
     import gpytorch as gpy
-    from functions.blackbox_function import BlackBoxFunc
-    from functions.own_functions import weird_func_2
-    from candidate_set import CandidateSet
-    from gaussian_process import GPWrapper
+    from blackbox_function_OLD import BlackBoxFunc
+    from own_functions_OLD import weird_func_2
+    from archive.candidate_set_OLD import CandidateSet
+    from gaussian_process_OLD import GPWrapper
 
 
     # Initalize device:

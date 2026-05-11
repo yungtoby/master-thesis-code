@@ -2,8 +2,8 @@
 # TEST FOR BLACKBOX FUNC #
 ##########################
 def test_blackbox(device, dtype):
-    from functions.blackbox_function import BlackBoxFunc
-    from candidate_set import CandidateSet
+    from blackbox_function_OLD import BlackBoxFunc
+    from archive.candidate_set_OLD import CandidateSet
     import torch as t
 
     bb_func = BlackBoxFunc(t.sin)

@@ -6,12 +6,12 @@ def test_BO(num_steps, num_training_iter):
     import torch as t
     import time
 
-    from gaussian_process import GPWrapper
-    from candidate_set import CandidateSet 
-    from functions.blackbox_function import BlackBoxFunc
-    from functions.own_functions import sin_func
-    from acquisition_function import EI
-    from bayesian_optimization import BO_Pipeline
+    from gaussian_process_OLD import GPWrapper
+    from archive.candidate_set_OLD import CandidateSet 
+    from blackbox_function_OLD import BlackBoxFunc
+    from own_functions_OLD import sin_func
+    from acquisition_function_OLD import EI
+    from bayesian_optimization_OLD import BO_Pipeline
     
 
     print('\n\nINITIALIZING BO PIPELINE ON CPU\n\n--------------------------------')
@@ -59,12 +59,12 @@ def test_BO_GPU(num_steps, num_training_iter):
     import torch as t
     import time
 
-    from gaussian_process import GPWrapper
-    from candidate_set import CandidateSet 
-    from functions.blackbox_function import BlackBoxFunc
-    from functions.own_functions import sin_func
-    from acquisition_function import EI
-    from bayesian_optimization import BO_Pipeline
+    from gaussian_process_OLD import GPWrapper
+    from archive.candidate_set_OLD import CandidateSet 
+    from blackbox_function_OLD import BlackBoxFunc
+    from own_functions_OLD import sin_func
+    from acquisition_function_OLD import EI
+    from bayesian_optimization_OLD import BO_Pipeline
 
 
     print('\n\nINITIALIZING BO PIPELINE ON GPU\n\n--------------------------------')
