@@ -14,7 +14,7 @@ from bo.problems.registry import build_problem_family
 
 class BatchedBOEnv():
     '''Gymansium environment for one BO episode.'''
-    def __init__(self, device, dtype, num_batches, n_candidates, n_init, budget, max_acquistions, reward_type,
+    def __init__(self, device, dtype, num_batches, n_candidates, n_init, budget, max_acquisitions, reward_type,
                  candidate_set_cfg, problem_family_cfg, gp_cfg):
         # Device and dtype
         self.device = t.device(device)
@@ -27,7 +27,7 @@ class BatchedBOEnv():
         self.budget = budget
         self.remaining_budget = None
         self.reward_type = reward_type 
-        self.T_max = self.n_init + max_acquistions
+        self.T_max = self.n_init + max_acquisitions
         self.last_obs = None
         self.problem_family = None
         self.params = None
@@ -69,10 +69,9 @@ class BatchedBOEnv():
 
         # Initialize cost and objective func params
         self.problem_family = build_problem_family(
-            self.candidate_set_cfg,
+            self.problem_family_cfg,
             device=self.device,
-            dtype=self.dtype,
-            B=self.num_batches,
+            dtype=self.dtype
         )
 
         self.params = self.problem_family.sample_params(B=self.num_batches, seed=seed) 
