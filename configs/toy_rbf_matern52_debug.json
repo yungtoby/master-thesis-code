@@ -66,5 +66,12 @@
     "lr": 0.001,
     "training_iter": 10,
     "base_noise": 0.001
+  },
+
+  "cost_model": {
+  "type": "known",
+  "target_transform": "log1p",
+  "include_uncertainty": false
   }
+  
 }

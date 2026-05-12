@@ -69,7 +69,7 @@
   },
 
   "cost_model": {
-  "type": "known",
+  "type": "gp",
   "target_transform": "log1p",
   "include_uncertainty": false
   }

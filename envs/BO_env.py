@@ -13,9 +13,9 @@ from bo.problems.registry import build_problem_family
 
 
 class BatchedBOEnv():
-    '''Gymansium environment for one BO episode.'''
+    '''Batched environment for one BO episode.'''
     def __init__(self, device, dtype, num_batches, n_candidates, n_init, budget, max_acquisitions, reward_type,
-                 candidate_set_cfg, problem_family_cfg, gp_cfg):
+                 candidate_set_cfg, problem_family_cfg, gp_cfg, cost_model_cfg=None):
         # Device and dtype
         self.device = t.device(device)
         self.dtype = dtype
@@ -36,11 +36,14 @@ class BatchedBOEnv():
         self.candidate_set_cfg = candidate_set_cfg
         self.problem_family_cfg = problem_family_cfg
         self.gp_cfg = gp_cfg
+        self.cost_model_cfg = cost_model_cfg or {"type":"known"}
+        self.use_cost_gp = self.cost_model_cfg.get("type", "known") == "gp"
 
         # Internal state
         self.X = None
         self.costs = None
-        self.gp = None
+        self.obj_gp = None
+        self.cost_gp = None
         self.ep_return = None
         self.ep_len = None
         self.best_current_value = None
@@ -79,7 +82,7 @@ class BatchedBOEnv():
 
         # And gaussian process   
         d = self.X.shape[-1]   
-        self.gp = RepeatedPadGPWrapper(
+        self.obj_gp = RepeatedPadGPWrapper(
             device=self.device,
             dtype=self.dtype,
             B=self.num_batches,
@@ -90,9 +93,24 @@ class BatchedBOEnv():
             kernel=self.gp_cfg.get('kernel', 'rbf'),
         )
 
+        if self.use_cost_gp:
+            self.cost_gp = RepeatedPadGPWrapper(
+                device=self.device,
+                dtype=self.dtype,
+                B=self.num_batches,
+                T_max=self.T_max,
+                d=d,
+                lr=self.gp_cfg.get('lr', 1e-3),
+                training_iter=self.gp_cfg.get('training_iter', 10),
+                kernel=self.gp_cfg.get('kernel', 'rbf'),
+            )
+
         # Initialize initial points for each lane in the batch
-        x_init, y_init = self._sample_init_design()
-        self.gp.set_lane_data(t.ones((self.num_batches,), device=self.device, dtype=t.bool), x_init, y_init)
+        x_init, y_init, c_init = self._sample_init_design()
+        self.obj_gp.set_lane_data(t.ones((self.num_batches,), device=self.device, dtype=t.bool), x_init, y_init)
+
+        if self.use_cost_gp:
+            self.cost_gp.set_lane_data(t.ones((self.num_batches,), device=self.device, dtype=t.bool), x_init, self._cost_to_gp_target(c_init))
                 
         # Reset environment scalars and find best current values among init
         self.remaining_budget = t.full((self.num_batches,), self.budget, device=self.device, dtype=self.dtype)
@@ -126,10 +144,11 @@ class BatchedBOEnv():
         # Allocate full-shaped outputs
         train_x = t.zeros((B, self.n_init, d), device=self.device, dtype=self.dtype)
         train_y = t.zeros((B, self.n_init), device=self.device, dtype=self.dtype)
+        train_cost = t.zeros((B, self.n_init), device=self.device, dtype=self.dtype)
 
         # Saftery in case it is called with 0 mask
         if lanes.numel() == 0:
-            return train_x, train_y
+            return train_x, train_y, train_cost
 
         # Choose init indices (shared across lanes for simplicity)
         idx = t.randperm(N, device=self.device)[: self.n_init]  # [n_init]
@@ -139,10 +158,20 @@ class BatchedBOEnv():
 
         # Evaluate only selected lanes using matching params slice
         params_lanes = {k: v[lanes] for k, v in self.params.items()}
-        y = self.problem_family.evaluate(train_x[lanes], params_lanes).squeeze(-1)  # [n_lanes, n_init]
-        train_y[lanes] = y
+        y = self.problem_family.evaluate(train_x[lanes], params_lanes)  # [n_lanes, n_init]
+        c = self.problem_family.costs(train_x[lanes], params_lanes)
 
-        return train_x, train_y
+        if y.dim() == 3 and y.size(-1) == 1:
+            y = y.squeeze(-1)
+
+        if c.dim() == 3 and c.size(-1) == 1:
+            c = c.squeeze(-1)
+
+
+        train_y[lanes] = y
+        train_cost[lanes] = c
+
+        return train_x, train_y, train_cost
     
 
 
@@ -174,9 +203,11 @@ class BatchedBOEnv():
         self.ep_len[lanes] = 0
 
         # New init design and load into GP buffers
-        x_init, y_init = self._sample_init_design(lane_mask) 
-        self.gp.set_lane_data(lane_mask, x_init, y_init)
-        #self.gp.train()
+        x_init, y_init, c_init = self._sample_init_design(lane_mask) 
+        self.obj_gp.set_lane_data(lane_mask, x_init, y_init)
+
+        if self.use_cost_gp:
+            self.cost_gp.set_lane_data(lane_mask, x_init, self._cost_to_gp_target(c_init),)
 
         # Update best current values after new init
         self.best_current_value[lanes] = y_init[lanes].max(dim=1).values
@@ -209,8 +240,13 @@ class BatchedBOEnv():
             y1 = y.squeeze(1)
 
             # Add data for the active lanes
-            self.gp.add_data(x, y, active_mask=active)
-            #self.gp.train()
+            self.obj_gp.add_data(x, y, active_mask=active)
+            if self.use_cost_gp:
+                self.cost_gp.add_data(
+                    x,
+                    self._cost_to_gp_target(cost),
+                    active_mask=active,
+                )
 
             # Update state for active lanes in the batch
             self.best_current_value[active] = t.maximum(self.best_current_value[active], y1[active])
@@ -258,30 +294,58 @@ class BatchedBOEnv():
 
 
     def _gp_predict_on_candidates(self):
-        pred = self.gp.predict(self.X)  
+        pred = self.obj_gp.predict(self.X)  
         mu = pred.mean      
         sigma = pred.stddev
 
-        return mu, sigma
+        if self.use_cost_gp:
+            cost_pred = self.cost_gp.predict(self.X)
+            cost = self._gp_target_to_cost_mean(cost_pred)
+        
+        else:
+            cost = self.problem_family.costs(self.X, self.params)
+            
+            if cost.dim() == 3 and cost.size(-1) == 1:
+                cost = cost.squeeze(-1)
+
+        max_cost = cost.max(dim=1, keepdim=True).values.expand_as(cost)
+
+        return mu, sigma, cost, max_cost
 
 
+    def _cost_to_gp_target(self, cost):
+        '''Transform cost to log cost if specified'''
+        transform = self.cost_model_cfg.get("target_transform", "log1p")
 
-    #def _build_obs(self, mu, sigma):
-    #    B, N = mu.shape
+        if transform == "log1p":
+            return t.log1p(cost.clamp_min(0.0))
 
-    #    budget = self.remaining_budget.unsqueeze(1).expand(B, N)        # [B] -> [B,N]
-    #    best   = self.best_current_value.unsqueeze(1).expand(B, N)      # [B] -> [B,N]
+        if transform == "none":
+            return cost
 
-    #    obs = t.stack([mu, sigma, self.costs, budget, best], dim=-1)    # [B, N, 5]
-
-    #    return obs
+        raise ValueError(f"Unknown cost target transform: {transform}")
     
 
-    def _build_obs(self, mu, sigma):
-        B, N = mu.shape
+    def _gp_target_to_cost_mean(self, pred):
+        '''...'''
+        transform = self.cost_model_cfg.get("target_transform", "log1p")
 
-        # normalized local cost
-        cost = self.costs / self.budget
+        if transform == "log1p":
+            mu_z = pred.mean
+            var_z = pred.variance.clamp_min(0.0)
+
+            # Approximate E[exp(z)-1] when z is Gaussian.
+            cost_mean = t.exp(mu_z + 0.5 * var_z) - 1.0
+            return cost_mean.clamp_min(0.0)
+
+        if transform == "none":
+            return pred.mean.clamp_min(0.0)
+
+        raise ValueError(f"Unknown cost target transform: {transform}")
+    
+
+    def _build_obs(self, mu, sigma, cost, max_cost):
+        B, N = mu.shape
 
         # global progress (time spent fraction) or remaining fraction
         progress = (1.0 - self.remaining_budget / self.budget).unsqueeze(1).expand(B, N)
@@ -289,8 +353,6 @@ class BatchedBOEnv():
         # best so far
         best = self.best_current_value.unsqueeze(1).expand(B, N)
 
-        # global max cost baseline (normalized)
-        max_cost = (self.costs.max(dim=1).values / self.budget).unsqueeze(1).expand(B, N)
 
-        obs = t.stack([mu, sigma, cost, progress, best, max_cost], dim=-1)  # [B,N,6]
+        obs = t.stack([mu, sigma, cost / self.budget, progress, best, max_cost / self.budget], dim=-1)  # [B,N,6]
         return obs

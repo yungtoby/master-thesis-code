@@ -64,6 +64,7 @@ def make_env(cfg, device):
         candidate_set_cfg=cfg["candidate_set"],
         problem_family_cfg=cfg["problem_family"],
         gp_cfg=cfg["gp"],
+        cost_model_cfg = cfg.get("cost_model", {"type" : "known"})
     )
 
 
