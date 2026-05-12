@@ -85,8 +85,9 @@ class BatchedBOEnv():
             B=self.num_batches,
             T_max=self.T_max,
             d=d,
-            lr=self.gp_cfg.get("lr", 1e-3),
-            training_iter=self.gp_cfg.get("training_iter", 10)
+            lr=self.gp_cfg.get('lr', 1e-3),
+            training_iter=self.gp_cfg.get('training_iter', 10),
+            kernel=self.gp_cfg.get('kernel', 'rbf'),
         )
 
         # Initialize initial points for each lane in the batch

@@ -1,0 +1,70 @@
+{
+  "experiment": {
+    "name": "toy_rbf_debug",
+    "env_id": "CostAwareBO-ToyRBF",
+    "seed": 1,
+    "torch_deterministic": true,
+    "cuda": true,
+    "save_every": 250000,
+    "checkpoint_dir": "checkpoints",
+    "run_dir": "runs"
+  },
+
+  "ppo": {
+    "total_timesteps": 500000,
+    "learning_rate": 0.0001,
+    "num_envs": 256,
+    "num_steps": 32,
+    "anneal_lr": true,
+    "gamma": 1.0,
+    "gae_lambda": 0.98,
+    "num_minibatches": 4,
+    "update_epochs": 4,
+    "norm_adv": true,
+    "clip_coef": 0.2,
+    "clip_vloss": true,
+    "ent_coef": 0.01,
+    "vf_coef": 1.0,
+    "max_grad_norm": 0.5,
+    "target_kl": 0.3
+  },
+
+  "agent": {
+    "num_layers": 3,
+    "layer_size": 64
+  },
+
+  "env": {
+    "device": "cuda",
+    "dtype": "float32",
+    "n_candidates": 900,
+    "n_init": 3,
+    "budget": 30.0,
+    "max_acquisitions": 200,
+    "reward_type": "final_neglog_regret"
+  },
+
+  "candidate_set": {
+    "type": "jittered_grid",
+    "res": 30,
+    "D": 2,
+    "minimum": 0.0,
+    "maximum": 10.0,
+    "jitter_frac": 0.35
+  },
+
+  "problem_family": {
+    "type": "toy_rbf",
+    "lb": [0.0, 0.0],
+    "ub": [10.0, 10.0],
+    "M": 3,
+    "min_cost": 1.0
+  },
+  
+  "gp": {
+    "kernel": "matern52",
+    "lr": 0.001,
+    "training_iter": 10,
+    "base_noise": 0.001
+  }
+}

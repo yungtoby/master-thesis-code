@@ -30,7 +30,7 @@ class RepeatedPadGPWrapper:
     Keep batched buffers with valid-prefix bookkeeping, but rebuild a fresh
     batched GP from repeated real observations when predictions are needed.
     """
-    def __init__(self, device, dtype, B, T_max, d, lr=1e-3, training_iter=10):
+    def __init__(self, device, dtype, B, T_max, d, lr=1e-3, training_iter=10, kernel='rbf'):
         self.device = t.device(device)
         self.dtype = dtype
         self.B = B
@@ -38,6 +38,7 @@ class RepeatedPadGPWrapper:
         self.d = d
         self.lr = lr
         self.training_iter = training_iter
+        self.kernel = kernel
 
         # storage only
         self.train_x = t.zeros((B, T_max, d), device=self.device, dtype=self.dtype)
@@ -86,6 +87,27 @@ class RepeatedPadGPWrapper:
         self.train_x[lanes, idx] = x_new[lanes, 0]
         self.train_y[lanes, idx] = y_new[lanes]
         self.t_idx[lanes] += 1
+
+    
+    def _make_base_kernel(self, batch_shape):
+        if self.kernel == 'rbf':
+            return gpy.kernels.RBFKernel(
+                batch_shape=batch_shape,
+                ard_num_dims=self.d
+            )
+        if self.kernel == 'matern32':
+            return gpy.kernels.MaternKernel(
+                nu=1.5,
+                batch_shape=batch_shape,
+                ard_num_dims=self.d
+            )
+        if self.kernel == 'matern52':
+            return gpy.kernels.MaternKernel(
+                nu=2.5,
+                batch_shape=batch_shape,
+                ard_num_dims=self.d
+            )
+        return ValueError(f"Unknown GP kernel choice: {self.kernel}")
 
 
     def _repeat_pad_prefixes(self):
@@ -136,9 +158,11 @@ class RepeatedPadGPWrapper:
         ).to(self.device)
 
         mean_module = gpy.means.ConstantMean(batch_shape=batch_shape)
+
+        base_kernel = self._make_base_kernel(batch_shape)
         covar_module = gpy.kernels.ScaleKernel(
-            gpy.kernels.RBFKernel(batch_shape=batch_shape, ard_num_dims=self.d),
-            batch_shape=batch_shape,
+            base_kernel=base_kernel,
+            batch_shape=batch_shape
         )
 
         gp = GaussianProcess(
