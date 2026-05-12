@@ -331,12 +331,7 @@ class BatchedBOEnv():
         transform = self.cost_model_cfg.get("target_transform", "log1p")
 
         if transform == "log1p":
-            mu_z = pred.mean
-            var_z = pred.variance.clamp_min(0.0)
-
-            # Approximate E[exp(z)-1] when z is Gaussian.
-            cost_mean = t.exp(mu_z + 0.5 * var_z) - 1.0
-            return cost_mean.clamp_min(0.0)
+            return t.expm1(pred.mean).clamp_min(0.0)
 
         if transform == "none":
             return pred.mean.clamp_min(0.0)

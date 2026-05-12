@@ -107,7 +107,7 @@ class RepeatedPadGPWrapper:
                 batch_shape=batch_shape,
                 ard_num_dims=self.d
             )
-        return ValueError(f"Unknown GP kernel choice: {self.kernel}")
+        raise ValueError(f"Unknown GP kernel choice: {self.kernel}")
 
 
     def _repeat_pad_prefixes(self):
