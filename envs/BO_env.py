@@ -36,8 +36,8 @@ class BatchedBOEnv():
         self.candidate_set_cfg = candidate_set_cfg
         self.problem_family_cfg = problem_family_cfg
         self.gp_cfg = gp_cfg
-        self.cost_model_cfg = cost_model_cfg or {"type":"known"}
-        self.use_cost_gp = self.cost_model_cfg.get("type", "known") == "gp"
+        self.cost_model_cfg = cost_model_cfg or {'type':'known'}
+        self.use_cost_gp = self.cost_model_cfg.get('type', 'known') == 'gp'
 
         # Internal state
         self.X = None
@@ -58,19 +58,6 @@ class BatchedBOEnv():
         t.manual_seed(seed)
         t.backends.cudnn.deterministic = deterministic
 
-
-        # Initialize Candidate set
-        self.candidate_set = build_candidate_set(
-            self.candidate_set_cfg,
-            device=self.device,
-            dtype=self.dtype,
-            B=self.num_batches,
-        )
-
-        self.X = self.candidate_set.get_grid()
-        
-        assert self.X.shape[1] == self.n_candidates
-
         # Initialize problem family
         self.problem_family = build_problem_family(
             self.problem_family_cfg,
@@ -78,22 +65,48 @@ class BatchedBOEnv():
             dtype=self.dtype
         )
 
-        # Sample parameters
-        self.params = self.problem_family.sample_params(B=self.num_batches, seed=seed) 
+        if getattr(self.problem_family, 'provides_candidate_cache', False):
+            self.candidate_set = None
+            self.X, self.y_grid, self.costs, self.params = (
+                self.problem_family.build_candidate_cache(
+                    B=self.num_batches,
+                    n_candidates=self.n_candidates,
+                    seed=seed,
+                )
+            )
 
-        # Update y_grid with parameters
-        self.y_grid = self.problem_family.evaluate(self.X, self.params)
-        if self.y_grid.dim() == 3 and self.y_grid.size(-1) == 1:
-            self.y_grid = self.y_grid.squeeze(-1)
+        else:
+            # Initialize Candidate set
+            self.candidate_set = build_candidate_set(
+                self.candidate_set_cfg,
+                device=self.device,
+                dtype=self.dtype,
+                B=self.num_batches,
+            )
 
-        # Update costs with parameters
-        self.costs = self.problem_family.costs(self.X, self.params)
-        if self.costs.dim() == 3 and self.costs.size(-1) == 1:
-            self.costs = self.costs.squeeze(-1)
+            self.X = self.candidate_set.get_grid()
+            assert self.X.shape[1] == self.n_candidates
+
+
+            # Sample parameters
+            self.params = self.problem_family.sample_params(B=self.num_batches, seed=seed) 
+
+            # Update y_grid with parameters
+            self.y_grid = self.problem_family.evaluate(self.X, self.params)
+            if self.y_grid.dim() == 3 and self.y_grid.size(-1) == 1:
+                self.y_grid = self.y_grid.squeeze(-1)
+
+            # Update costs with parameters
+            self.costs = self.problem_family.costs(self.X, self.params)
+            if self.costs.dim() == 3 and self.costs.size(-1) == 1:
+                self.costs = self.costs.squeeze(-1)
 
         # Check dimensions
+        assert self.X.shape[0] == self.num_batches
+        assert self.X.shape[1] == self.n_candidates
         assert self.y_grid.shape == (self.num_batches, self.n_candidates)
         assert self.costs.shape == (self.num_batches, self.n_candidates)
+
 
         # Initialize gaussian process   
         d = self.X.shape[-1]   
@@ -263,7 +276,7 @@ class BatchedBOEnv():
         # Terminal mask for PPO, which lanes ended THIS step
         terminal = self.done.clone()
 
-        if (self.reward_type == "final_neglog_regret") and terminal.any():
+        if (self.reward_type == 'final_neglog_regret') and terminal.any():
             ground_truth = self.y_grid.max(dim=1).values
             regret = ground_truth - self.best_current_value
             reward[terminal] = -t.log(t.clamp(regret[terminal], min=1e-12))
@@ -282,15 +295,15 @@ class BatchedBOEnv():
 
             for i in terminal_lanes.tolist():
                 final_info[i] = {
-                    "episode": {
-                        "r": self.ep_return[i].item(),
-                        "l": int(self.ep_len[i].item()),
+                    'episode': {
+                        'r': self.ep_return[i].item(),
+                        'l': int(self.ep_len[i].item()),
                     },
-                    "regret": regret[i].item(),
-                    "best_value": self.best_current_value[i].item(),
+                    'regret': regret[i].item(),
+                    'best_value': self.best_current_value[i].item(),
                 }
 
-            info["final_info"] = final_info
+            info['final_info'] = final_info
             self._reset_lanes(terminal)
 
         obs = self._build_obs(*self._gp_predict_on_candidates())
@@ -319,28 +332,28 @@ class BatchedBOEnv():
 
     def _cost_to_gp_target(self, cost):
         '''Transform cost to log cost if specified'''
-        transform = self.cost_model_cfg.get("target_transform", "log1p")
+        transform = self.cost_model_cfg.get('target_transform', 'log1p')
 
-        if transform == "log1p":
+        if transform == 'log1p':
             return t.log1p(cost.clamp_min(0.0))
 
-        if transform == "none":
+        if transform == 'none':
             return cost
 
-        raise ValueError(f"Unknown cost target transform: {transform}")
+        raise ValueError(f'Unknown cost target transform: {transform}')
     
 
     def _gp_target_to_cost_mean(self, pred):
         '''...'''
-        transform = self.cost_model_cfg.get("target_transform", "log1p")
+        transform = self.cost_model_cfg.get('target_transform', 'log1p')
 
-        if transform == "log1p":
+        if transform == 'log1p':
             return t.expm1(pred.mean).clamp_min(0.0)
 
-        if transform == "none":
+        if transform == 'none':
             return pred.mean.clamp_min(0.0)
 
-        raise ValueError(f"Unknown cost target transform: {transform}")
+        raise ValueError(f'Unknown cost target transform: {transform}')
     
 
     def _build_obs(self, mu, sigma, cost, max_cost):
