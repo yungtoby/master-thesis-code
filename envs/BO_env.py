@@ -41,6 +41,7 @@ class BatchedBOEnv():
 
         # Internal state
         self.X = None
+        self.y_grid = None
         self.costs = None
         self.obj_gp = None
         self.cost_gp = None
@@ -70,17 +71,31 @@ class BatchedBOEnv():
         
         assert self.X.shape[1] == self.n_candidates
 
-        # Initialize cost and objective func params
+        # Initialize problem family
         self.problem_family = build_problem_family(
             self.problem_family_cfg,
             device=self.device,
             dtype=self.dtype
         )
 
+        # Sample parameters
         self.params = self.problem_family.sample_params(B=self.num_batches, seed=seed) 
-        self.costs = self.problem_family.costs(self.X, self.params)
 
-        # And gaussian process   
+        # Update y_grid with parameters
+        self.y_grid = self.problem_family.evaluate(self.X, self.params)
+        if self.y_grid.dim() == 3 and self.y_grid.size(-1) == 1:
+            self.y_grid = self.y_grid.squeeze(-1)
+
+        # Update costs with parameters
+        self.costs = self.problem_family.costs(self.X, self.params)
+        if self.costs.dim() == 3 and self.costs.size(-1) == 1:
+            self.costs = self.costs.squeeze(-1)
+
+        # Check dimensions
+        assert self.y_grid.shape == (self.num_batches, self.n_candidates)
+        assert self.costs.shape == (self.num_batches, self.n_candidates)
+
+        # Initialize gaussian process   
         d = self.X.shape[-1]   
         self.obj_gp = RepeatedPadGPWrapper(
             device=self.device,
@@ -93,6 +108,7 @@ class BatchedBOEnv():
             kernel=self.gp_cfg.get('kernel', 'rbf'),
         )
 
+        # If cost gp, then initialize cost gp
         if self.use_cost_gp:
             self.cost_gp = RepeatedPadGPWrapper(
                 device=self.device,
@@ -153,27 +169,13 @@ class BatchedBOEnv():
         # Choose init indices (shared across lanes for simplicity)
         idx = t.randperm(N, device=self.device)[: self.n_init]  # [n_init]
 
-        # Fill only selected lanes
-        train_x[lanes] = self.X[lanes][:, idx, :]  # [n_lanes, n_init, d]
-
-        # Evaluate only selected lanes using matching params slice
-        params_lanes = {k: v[lanes] for k, v in self.params.items()}
-        y = self.problem_family.evaluate(train_x[lanes], params_lanes)  # [n_lanes, n_init]
-        c = self.problem_family.costs(train_x[lanes], params_lanes)
-
-        if y.dim() == 3 and y.size(-1) == 1:
-            y = y.squeeze(-1)
-
-        if c.dim() == 3 and c.size(-1) == 1:
-            c = c.squeeze(-1)
-
-
-        train_y[lanes] = y
-        train_cost[lanes] = c
+        train_x[lanes] = self.X[lanes][:, idx, :]
+        train_y[lanes] = self.y_grid[lanes][:, idx]
+        train_cost[lanes] = self.costs[lanes][:, idx]
 
         return train_x, train_y, train_cost
-    
 
+    
 
     def _reset_lanes(self, lane_mask):
         # Find which lanes to reset, if none, return
@@ -190,9 +192,20 @@ class BatchedBOEnv():
         for k in self.params:
             self.params[k][lanes] = new_params[k]
 
-        # Recompute cost for these lanes
+        # Recompute cost and y_grid for these lanes
         params_lanes = {k: v[lanes] for k,v in self.params.items()}
-        self.costs[lanes] = self.problem_family.costs(self.X[lanes], params_lanes)
+
+        y_lanes = self.problem_family.evaluate(self.X[lanes], params_lanes)
+        if y_lanes.dim() == 3 and y_lanes.size(-1) == 1:
+            y_lanes = y_lanes.squeeze(-1)
+
+        c_lanes = self.problem_family.costs(self.X[lanes], params_lanes)
+        if c_lanes.dim() == 3 and c_lanes.size(-1) == 1:
+            c_lanes = c_lanes.squeeze(-1)
+
+        self.y_grid[lanes] = y_lanes
+        self.costs[lanes] = c_lanes
+
 
         # Reset budget / done
         self.remaining_budget[lanes] = self.budget
@@ -233,20 +246,14 @@ class BatchedBOEnv():
             c_idx = actions.view(B, 1)
             cost = t.gather(self.costs, 1, c_idx).squeeze(1)
 
-            # Evaluate for active lanes 
-            y = t.zeros((B,1), device=self.device, dtype=self.dtype)
-            params_active = {k: v[active] for k, v in self.params.items()}
-            y[active] = self.problem_family.evaluate(x[active], params_active).squeeze(-1)
-            y1 = y.squeeze(1)
+            y1 = t.gather(self.y_grid, 1, c_idx).squeeze(1)
+            y = y1.unsqueeze(1)
 
             # Add data for the active lanes
             self.obj_gp.add_data(x, y, active_mask=active)
+
             if self.use_cost_gp:
-                self.cost_gp.add_data(
-                    x,
-                    self._cost_to_gp_target(cost),
-                    active_mask=active,
-                )
+                self.cost_gp.add_data(x, self._cost_to_gp_target(cost), active_mask=active)
 
             # Update state for active lanes in the batch
             self.best_current_value[active] = t.maximum(self.best_current_value[active], y1[active])
@@ -257,7 +264,7 @@ class BatchedBOEnv():
         terminal = self.done.clone()
 
         if (self.reward_type == "final_neglog_regret") and terminal.any():
-            ground_truth = self.problem_family.optimal_value_on_grid(self.X, self.params) 
+            ground_truth = self.y_grid.max(dim=1).values
             regret = ground_truth - self.best_current_value
             reward[terminal] = -t.log(t.clamp(regret[terminal], min=1e-12))
 
@@ -270,7 +277,7 @@ class BatchedBOEnv():
             final_info = [None] * B
             terminal_lanes = t.where(terminal)[0]
 
-            ground_truth = self.problem_family.optimal_value_on_grid(self.X, self.params)
+            ground_truth = self.y_grid.max(dim=1).values
             regret = ground_truth - self.best_current_value
 
             for i in terminal_lanes.tolist():
@@ -303,10 +310,7 @@ class BatchedBOEnv():
             cost = self._gp_target_to_cost_mean(cost_pred)
         
         else:
-            cost = self.problem_family.costs(self.X, self.params)
-            
-            if cost.dim() == 3 and cost.size(-1) == 1:
-                cost = cost.squeeze(-1)
+            cost = self.costs
 
         max_cost = cost.max(dim=1, keepdim=True).values.expand_as(cost)
 
@@ -351,3 +355,77 @@ class BatchedBOEnv():
 
         obs = t.stack([mu, sigma, cost / self.budget, progress, best, max_cost / self.budget], dim=-1)  # [B,N,6]
         return obs
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    ############
+    # OLD CODE #
+    ############
+    def _sample_init_design_ARCHIVED(self, lane_mask=None):
+        '''
+        Sample the n_init number of initial training points
+        for lanes chosen by lane_mask (Default: all lanes)
+        '''
+        # Choose n_init random indices from length N
+        B, N, d = self.X.shape
+
+        if lane_mask is None:
+            lane_mask = t.ones((B,), device=self.device, dtype=t.bool)
+
+        lanes = t.where(lane_mask)[0]
+        
+        # Allocate full-shaped outputs
+        train_x = t.zeros((B, self.n_init, d), device=self.device, dtype=self.dtype)
+        train_y = t.zeros((B, self.n_init), device=self.device, dtype=self.dtype)
+        train_cost = t.zeros((B, self.n_init), device=self.device, dtype=self.dtype)
+
+        # Saftery in case it is called with 0 mask
+        if lanes.numel() == 0:
+            return train_x, train_y, train_cost
+
+        # Choose init indices (shared across lanes for simplicity)
+        idx = t.randperm(N, device=self.device)[: self.n_init]  # [n_init]
+
+        # Fill only selected lanes
+        train_x[lanes] = self.X[lanes][:, idx, :]  # [n_lanes, n_init, d]
+
+        # Evaluate only selected lanes using matching params slice
+        params_lanes = {k: v[lanes] for k, v in self.params.items()}
+        y = self.problem_family.evaluate(train_x[lanes], params_lanes)  # [n_lanes, n_init]
+        c = self.problem_family.costs(train_x[lanes], params_lanes)
+
+        if y.dim() == 3 and y.size(-1) == 1:
+            y = y.squeeze(-1)
+
+        if c.dim() == 3 and c.size(-1) == 1:
+            c = c.squeeze(-1)
+
+
+        train_y[lanes] = y
+        train_cost[lanes] = c
+
+        return train_x, train_y, train_cost
