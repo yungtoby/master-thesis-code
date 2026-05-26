@@ -195,29 +195,48 @@ class BatchedBOEnv():
         lanes = t.where(lane_mask)[0]
         if lanes.numel() == 0:
             return
+        
+        if getattr(self.problem_family, "provides_candidate_cache", False):
+            X_new, y_new, c_new, params_new = self.problem_family.build_candidate_cache(
+                B=lanes.numel(),
+                n_candidates=self.n_candidates,
+                seed=None,
+            )
 
-        # Regenerate candidates for these lanes
-        self.candidate_set.reset_lanes(lane_mask)
-        self.X = self.candidate_set.get_grid()
+            self.X[lanes] = X_new
+            self.y_grid[lanes] = y_new
+            self.costs[lanes] = c_new
 
-        # Regenerate params for these lanes
-        new_params = self.problem_family.sample_params(B=lanes.numel())
-        for k in self.params:
-            self.params[k][lanes] = new_params[k]
+            if hasattr(self.problem_family, "update_lane_params"):
+                self.params = self.problem_family.update_lane_params(
+                    self.params,
+                    lanes,
+                    params_new,
+                )
 
-        # Recompute cost and y_grid for these lanes
-        params_lanes = {k: v[lanes] for k,v in self.params.items()}
+        else:
+            # Regenerate candidates for these lanes
+            self.candidate_set.reset_lanes(lane_mask)
+            self.X = self.candidate_set.get_grid()
 
-        y_lanes = self.problem_family.evaluate(self.X[lanes], params_lanes)
-        if y_lanes.dim() == 3 and y_lanes.size(-1) == 1:
-            y_lanes = y_lanes.squeeze(-1)
+            # Regenerate params for these lanes
+            new_params = self.problem_family.sample_params(B=lanes.numel())
+            for k in self.params:
+                self.params[k][lanes] = new_params[k]
 
-        c_lanes = self.problem_family.costs(self.X[lanes], params_lanes)
-        if c_lanes.dim() == 3 and c_lanes.size(-1) == 1:
-            c_lanes = c_lanes.squeeze(-1)
+            # Recompute cost and y_grid for these lanes
+            params_lanes = {k: v[lanes] for k,v in self.params.items()}
 
-        self.y_grid[lanes] = y_lanes
-        self.costs[lanes] = c_lanes
+            y_lanes = self.problem_family.evaluate(self.X[lanes], params_lanes)
+            if y_lanes.dim() == 3 and y_lanes.size(-1) == 1:
+                y_lanes = y_lanes.squeeze(-1)
+
+            c_lanes = self.problem_family.costs(self.X[lanes], params_lanes)
+            if c_lanes.dim() == 3 and c_lanes.size(-1) == 1:
+                c_lanes = c_lanes.squeeze(-1)
+
+            self.y_grid[lanes] = y_lanes
+            self.costs[lanes] = c_lanes
 
 
         # Reset budget / done
