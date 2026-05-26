@@ -187,7 +187,7 @@ class BatchedBOEnv():
 
         # Saftery in case it is called with 0 mask
         if lanes.numel() == 0:
-            return train_x, train_y, train_cost
+            return train_x, train_y, train_cost, train_idx
 
         # Choose init indices (shared across lanes for simplicity)
         idx = t.randperm(N, device=self.device)[: self.n_init]  # [n_init]
