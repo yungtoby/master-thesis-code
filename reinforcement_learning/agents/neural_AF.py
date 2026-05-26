@@ -23,16 +23,21 @@ class Agent(nn.Module):
     def get_value(self, obs):
         return self.critic(obs[:, 0 ,3:6]).squeeze(-1)
 
+    
+    def get_logits(self, obs, action_mask=None):
+        logits = self.actor(obs).squeeze(-1)
 
-    def get_logits(self, obs):
-        return self.actor(obs).squeeze(-1)
+        if action_mask is not None:
+            logits = logits.masked_fill(~action_mask, -1e9)
 
+        return logits
 
-    def get_action_and_value(self, obs, action=None):
-        dist = Categorical(logits=self.get_logits(obs))
+    
+    def get_action_and_value(self, obs, action=None, action_mask=None):
+        dist = Categorical(logits=self.get_logits(obs, action_mask=action_mask))
         if action is None:
-            action=dist.sample()
-        
+            action = dist.sample()
+
         return action, dist.log_prob(action), dist.entropy(), self.get_value(obs)
 
 

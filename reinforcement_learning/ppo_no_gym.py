@@ -64,7 +64,8 @@ def make_env(cfg, device):
         candidate_set_cfg=cfg["candidate_set"],
         problem_family_cfg=cfg["problem_family"],
         gp_cfg=cfg["gp"],
-        cost_model_cfg = cfg.get("cost_model", {"type" : "known"})
+        cost_model_cfg = cfg.get("cost_model", {"type" : "known"}),
+        mask_visited_actions=env_cfg.get("mask_visited_actions", False)
     )
 
 
@@ -126,6 +127,7 @@ if __name__ == "__main__":
     rewards = torch.zeros((ppo_cfg['num_steps'], B), dtype=next_obs.dtype, device=device)
     dones = torch.zeros((ppo_cfg['num_steps'], B), dtype=next_obs.dtype, device=device)
     values = torch.zeros((ppo_cfg['num_steps'], B), dtype=next_obs.dtype, device=device)
+    action_masks = torch.ones((ppo_cfg["num_steps"], B, N), dtype=torch.bool, device=device)
     next_done = torch.zeros(B, dtype=next_obs.dtype, device=device)
 
     # TRY NOT TO MODIFY: start the game
@@ -151,9 +153,14 @@ if __name__ == "__main__":
             obs[step] = next_obs
             dones[step] = next_done
 
+            # Get mask for available actions
+            mask = env.get_action_mask()
+            action_masks[step] = mask
+
             # ALGO LOGIC: action logic
             with torch.no_grad():
-                action, logprob, _, value = agent.get_action_and_value(next_obs)
+                #action, logprob, _, value = agent.get_action_and_value(next_obs) (old without mask)
+                action, logprob, _, value = agent.get_action_and_value(next_obs, action_mask=mask)
                 values[step] = value.flatten()
             actions[step] = action
             logprobs[step] = logprob
@@ -197,6 +204,7 @@ if __name__ == "__main__":
         b_obs = obs.reshape((-1, N, d))
         b_logprobs = logprobs.reshape(-1)
         b_actions = actions.reshape((-1,))
+        b_action_masks = action_masks.reshape((-1, N))
         b_advantages = advantages.reshape(-1)
         b_returns = returns.reshape(-1)
         b_values = values.reshape(-1)
@@ -210,7 +218,7 @@ if __name__ == "__main__":
                 end = start + ppo_cfg['minibatch_size']
                 mb_inds = b_inds[start:end]
 
-                _, newlogprob, entropy, newvalue = agent.get_action_and_value(b_obs[mb_inds], b_actions.long()[mb_inds])
+                _, newlogprob, entropy, newvalue = agent.get_action_and_value(b_obs[mb_inds], b_actions.long()[mb_inds], action_mask=b_action_masks[mb_inds])
                 logratio = newlogprob - b_logprobs[mb_inds]
                 ratio = logratio.exp()
 

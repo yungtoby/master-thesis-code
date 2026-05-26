@@ -41,7 +41,8 @@
     "n_init": 3,
     "budget": 30.0,
     "max_acquisitions": 200,
-    "reward_type": "final_neglog_regret"
+    "reward_type": "final_neglog_regret",
+    "mask_visited_actions": true
   },
 
   "candidate_set": {

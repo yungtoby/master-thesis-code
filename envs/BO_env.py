@@ -15,7 +15,7 @@ from bo.problems.registry import build_problem_family
 class BatchedBOEnv():
     '''Batched environment for one BO episode.'''
     def __init__(self, device, dtype, num_batches, n_candidates, n_init, budget, max_acquisitions, reward_type,
-                 candidate_set_cfg, problem_family_cfg, gp_cfg, cost_model_cfg=None):
+                 candidate_set_cfg, problem_family_cfg, gp_cfg, cost_model_cfg=None, mask_visited_actions=False):
         # Device and dtype
         self.device = t.device(device)
         self.dtype = dtype
@@ -39,6 +39,7 @@ class BatchedBOEnv():
         self.gp_cfg = gp_cfg
         self.cost_model_cfg = cost_model_cfg or {'type':'known'}
         self.use_cost_gp = self.cost_model_cfg.get('type', 'known') == 'gp'
+        self.mask_visited_actions = mask_visited_actions
 
         # Internal state
         self.X = None
@@ -50,6 +51,7 @@ class BatchedBOEnv():
         self.ep_len = None
         self.best_current_value = None
         self.done = None
+        self.visited = None
 
 
 
@@ -136,7 +138,13 @@ class BatchedBOEnv():
             )
 
         # Initialize initial points for each lane in the batch
-        x_init, y_init, c_init = self._sample_init_design()
+        x_init, y_init, c_init, init_idx = self._sample_init_design()
+        self.visited = t.zeros((self.num_batches, self.n_candidates), device=self.device, dtype=t.bool)
+
+        if self.mask_visited_actions:
+            batch_idx = t.arange(self.num_batches, device=self.device).unsqueeze(1)
+            self.visited[batch_idx, init_idx] = True
+
         self.obj_gp.set_lane_data(t.ones((self.num_batches,), device=self.device, dtype=t.bool), x_init, y_init)
 
         if self.use_cost_gp:
@@ -175,6 +183,7 @@ class BatchedBOEnv():
         train_x = t.zeros((B, self.n_init, d), device=self.device, dtype=self.dtype)
         train_y = t.zeros((B, self.n_init), device=self.device, dtype=self.dtype)
         train_cost = t.zeros((B, self.n_init), device=self.device, dtype=self.dtype)
+        train_idx = t.zeros((B, self.n_init), device=self.device, dtype=t.long)
 
         # Saftery in case it is called with 0 mask
         if lanes.numel() == 0:
@@ -186,8 +195,9 @@ class BatchedBOEnv():
         train_x[lanes] = self.X[lanes][:, idx, :]
         train_y[lanes] = self.y_grid[lanes][:, idx]
         train_cost[lanes] = self.costs[lanes][:, idx]
+        train_idx[lanes] = idx.unsqueeze(0).expand(lanes.numel(), -1)
 
-        return train_x, train_y, train_cost
+        return train_x, train_y, train_cost, train_idx
 
     
 
@@ -249,7 +259,12 @@ class BatchedBOEnv():
         self.ep_len[lanes] = 0
 
         # New init design and load into GP buffers
-        x_init, y_init, c_init = self._sample_init_design(lane_mask) 
+        x_init, y_init, c_init, init_idx = self._sample_init_design(lane_mask) 
+
+        if self.mask_visited_actions:
+            self.visited[lanes] = False
+            self.visited[lanes.unsqueeze(1), init_idx[lanes]] = True
+
         self.obj_gp.set_lane_data(lane_mask, x_init, y_init)
 
         if self.use_cost_gp:
@@ -281,6 +296,10 @@ class BatchedBOEnv():
 
             y1 = t.gather(self.y_grid, 1, c_idx).squeeze(1)
             y = y1.unsqueeze(1)
+
+            if self.mask_visited_actions:
+                active_lanes = t.where(active)[0]
+                self.visited[active_lanes, actions[active_lanes]] = True
 
             # Add data for the active lanes
             self.obj_gp.add_data(x, y, active_mask=active)
@@ -335,6 +354,27 @@ class BatchedBOEnv():
         self.last_obs = obs
 
         return obs, reward, terminal, info
+    
+
+
+    def get_action_mask(self):
+        """
+        Returns:
+            mask: [B, N] bool tensor.
+                True means action is available.
+                False means action is unavailable.
+        """
+        if not self.mask_visited_actions:
+            return t.ones((self.num_batches, self.n_candidates), device=self.device, dtype=t.bool)
+
+        mask = ~self.visited
+
+        # Safety fallback: avoid all-invalid categorical distributions.
+        no_valid = mask.sum(dim=1) == 0
+        if no_valid.any():
+            mask[no_valid] = True
+
+        return mask
 
 
 
