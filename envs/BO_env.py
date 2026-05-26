@@ -299,7 +299,8 @@ class BatchedBOEnv():
             self.done = budget_done | length_done
 
         # Terminal mask for PPO, which lanes ended THIS step
-        terminal = self.done.clone()
+        #terminal = self.done.clone()
+        terminal = active & self.done
 
         if (self.reward_type == 'final_neglog_regret') and terminal.any():
             ground_truth = self.y_grid.max(dim=1).values
