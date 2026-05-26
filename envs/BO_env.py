@@ -27,6 +27,7 @@ class BatchedBOEnv():
         self.budget = budget
         self.remaining_budget = None
         self.reward_type = reward_type 
+        self.max_acquisitions = max_acquisitions
         self.T_max = self.n_init + max_acquisitions
         self.last_obs = None
         self.problem_family = None
@@ -289,8 +290,13 @@ class BatchedBOEnv():
 
             # Update state for active lanes in the batch
             self.best_current_value[active] = t.maximum(self.best_current_value[active], y1[active])
+
             self.remaining_budget[active] -= cost[active]
-            self.done[active] = self.remaining_budget[active] <= 0
+            self.ep_len[active] += 1
+
+            budget_done = self.remaining_budget <= 0
+            length_done = self.ep_len >= self.max_acquisitions
+            self.done = budget_done | length_done
 
         # Terminal mask for PPO, which lanes ended THIS step
         terminal = self.done.clone()
@@ -301,7 +307,6 @@ class BatchedBOEnv():
             reward[terminal] = -t.log(t.clamp(regret[terminal], min=1e-12))
 
         self.ep_return[active] += reward[active]
-        self.ep_len[active] += 1
 
         info = {}
 

@@ -81,22 +81,19 @@ class YAHPOLCBenchProblemFamily(BaseProblemFamily):
 
             lane_configs = []
 
-            # For each candidate in the lane
-            for n_idx in range(n_candidates):
+            # Sample configs
+            configs = self._sample_configs(instance, n_candidates)
+            ys, cs = self._evaluate_configs(instance, configs)
 
-                # Sample a config
-                cfg = self._sample_config(instance)
-
+            for n_idx, cfg in enumerate(configs):
                 # Append lane config to list of lane configs
                 lane_configs.append(cfg)
 
                 # Insert tensor into X tensor
                 X[b_idx, n_idx] = t.tensor(self._encode_config(cfg), device=self.device, dtype=self.dtype)
                 
-                # Insert validation and cost into tensors
-                y, c = self._evaluate_config(instance, cfg)
-                y_grid[b_idx, n_idx] = y
-                costs[b_idx, n_idx] = c
+                y_grid[b_idx, n_idx] = ys[n_idx]
+                costs[b_idx, n_idx] = cs[n_idx]
 
             raw_configs.append(lane_configs)
 
@@ -156,20 +153,26 @@ class YAHPOLCBenchProblemFamily(BaseProblemFamily):
             bounds[key] = (lo, hi, is_log)
 
         self._bounds = bounds
-
-
-
-    def _sample_config(self, instance: str) -> dict:
+    
+    
+    
+    def _sample_configs(self, instance: str, n_candidates: int) -> list[dict]:
         b = self._get_benchmark(instance)
         cs = b.get_opt_space(drop_fidelity_params=True)
 
-        cfg = cs.sample_configuration(1).get_dictionary()
-        cfg['epoch'] = self.epoch
+        configs = cs.sample_configuration(n_candidates)
 
-        # Make sure instance/task id is consistent.
-        cfg['OpenML_task_id'] = str(instance)
+        if n_candidates == 1:
+            configs = [configs]
 
-        return cfg
+        out = []
+        for cfg in configs:
+            d = cfg.get_dictionary()
+            d["epoch"] = self.epoch
+            d["OpenML_task_id"] = str(instance)
+            out.append(d)
+
+        return out
 
 
 
@@ -188,25 +191,32 @@ class YAHPOLCBenchProblemFamily(BaseProblemFamily):
             encoded.append(z)
 
         return encoded
+    
 
 
-
-    def _evaluate_config(self, instance: str, cfg: dict) -> tuple[float, float]:
+    def _evaluate_configs(self, instance: str, configs: list[dict]) -> tuple[list[float], list[float]]:
         b = self._get_benchmark(instance)
-        out = b.objective_function(cfg)
+        outs = b.objective_function(configs)
 
-        if isinstance(out, list):
-            out = out[0]
+        if isinstance(outs, dict):
+            outs = [outs]
 
-        y = float(out[self.objective_key]) * self.objective_scale
-        c = float(out[self.cost_key])
+        ys = []
+        cs = []
 
-        if not np.isfinite(y):
-            raise RuntimeError(f'Non-finite objective from YAHPO: {y}')
-        if not np.isfinite(c) or c < 0:
-            raise RuntimeError(f'Invalid cost from YAHPO: {c}')
+        for out in outs:
+            y = float(out[self.objective_key]) * self.objective_scale
+            c = float(out[self.cost_key])
 
-        return y, c
+            if not np.isfinite(y):
+                raise RuntimeError(f"Non-finite objective from YAHPO: {y}")
+            if not np.isfinite(c) or c < 0:
+                raise RuntimeError(f"Invalid cost from YAHPO: {c}")
+
+            ys.append(y)
+            cs.append(c)
+
+        return ys, cs
     
 
 

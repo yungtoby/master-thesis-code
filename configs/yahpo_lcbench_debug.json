@@ -14,7 +14,7 @@
     "total_timesteps": 1024,
     "learning_rate": 0.0001,
     "num_envs": 4,
-    "num_steps": 4,
+    "num_steps": 8,
     "anneal_lr": true,
     "gamma": 1.0,
     "gae_lambda": 0.98,
@@ -39,8 +39,8 @@
     "dtype": "float32",
     "n_candidates": 32,
     "n_init": 3,
-    "budget": 3000.0,
-    "max_acquisitions": 30,
+    "budget": 1000000.0,
+    "max_acquisitions": 2,
     "reward_type": "final_neglog_regret"
   },
 
@@ -62,7 +62,7 @@
     "lr": 0.001,
     "training_iter": 10
   },
-  
+
   "cost_model": {
     "type": "gp",
     "target_transform": "log1p",
