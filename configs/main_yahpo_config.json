@@ -42,7 +42,7 @@
     "budget": 5000.0,
     "max_acquisitions": 30,
     "reward_type": "final_neglog_regret",
-    "mask_visited_actions": true,
+    "mask_visited_actions": false,
     "objective_noise_std": 0.0,
     "objective_noise_clip": true
   },

@@ -15,10 +15,12 @@ from bo.problems.registry import build_problem_family
 class BatchedBOEnv():
     '''Batched environment for one BO episode.'''
     def __init__(self, device, dtype, num_batches, n_candidates, n_init, budget, max_acquisitions, reward_type,
-                 candidate_set_cfg, problem_family_cfg, gp_cfg, cost_model_cfg=None, mask_visited_actions=False):
+                 candidate_set_cfg, problem_family_cfg, gp_cfg, cost_model_cfg=None, mask_visited_actions=False,
+                 objective_noise_std=0.0, objective_noise_clip=True):
         # Device and dtype
         self.device = t.device(device)
         self.dtype = dtype
+
 
         # Environment 
         self.num_batches = num_batches
@@ -33,6 +35,7 @@ class BatchedBOEnv():
         self.problem_family = None
         self.params = None
 
+
         # Configs
         self.candidate_set_cfg = candidate_set_cfg
         self.problem_family_cfg = problem_family_cfg
@@ -40,6 +43,9 @@ class BatchedBOEnv():
         self.cost_model_cfg = cost_model_cfg or {'type':'known'}
         self.use_cost_gp = self.cost_model_cfg.get('type', 'known') == 'gp'
         self.mask_visited_actions = mask_visited_actions
+        self.objective_noise_std = float(objective_noise_std)
+        self.objective_noise_clip = bool(objective_noise_clip)
+        
 
         # Internal state
         self.X = None
@@ -50,6 +56,7 @@ class BatchedBOEnv():
         self.ep_return = None
         self.ep_len = None
         self.best_current_value = None
+        self.best_oracle_value = None
         self.done = None
         self.visited = None
 
@@ -139,6 +146,10 @@ class BatchedBOEnv():
 
         # Initialize initial points for each lane in the batch
         x_init, y_init, c_init, init_idx = self._sample_init_design()
+        
+        batch_idx = t.arange(self.num_batches, device=self.device).unsqueeze(1)
+        y_init_oracle = self.y_grid[batch_idx, init_idx]
+
         self.visited = t.zeros((self.num_batches, self.n_candidates), device=self.device, dtype=t.bool)
 
         if self.mask_visited_actions:
@@ -154,6 +165,7 @@ class BatchedBOEnv():
         self.remaining_budget = t.full((self.num_batches,), self.budget, device=self.device, dtype=self.dtype)
         self.done = t.full((self.num_batches,), False, device=self.device, dtype=t.bool)
         self.best_current_value = y_init.max(dim=1).values
+        self.best_oracle_value = y_init_oracle.max(dim=1).values
 
         # Compute initial mu, sigma and build observation
         obs = self._build_obs(*self._gp_predict_on_candidates())
@@ -193,8 +205,12 @@ class BatchedBOEnv():
         idx = t.randperm(N, device=self.device)[: self.n_init]  # [n_init]
 
         train_x[lanes] = self.X[lanes][:, idx, :]
-        train_y[lanes] = self.y_grid[lanes][:, idx]
+
+        y_mean = self.y_grid[lanes][:, idx]
+        train_y[lanes] = self._observe_y(y_mean)
+
         train_cost[lanes] = self.costs[lanes][:, idx]
+
         train_idx[lanes] = idx.unsqueeze(0).expand(lanes.numel(), -1)
 
         return train_x, train_y, train_cost, train_idx
@@ -260,6 +276,7 @@ class BatchedBOEnv():
 
         # New init design and load into GP buffers
         x_init, y_init, c_init, init_idx = self._sample_init_design(lane_mask) 
+        y_init_oracle = self.y_grid[lanes.unsqueeze(1), init_idx[lanes]]
 
         if self.mask_visited_actions:
             self.visited[lanes] = False
@@ -272,6 +289,7 @@ class BatchedBOEnv():
 
         # Update best current values after new init
         self.best_current_value[lanes] = y_init[lanes].max(dim=1).values
+        self.best_oracle_value[lanes] = y_init_oracle.max(dim=1).values
     
 
 
@@ -294,7 +312,8 @@ class BatchedBOEnv():
             c_idx = actions.view(B, 1)
             cost = t.gather(self.costs, 1, c_idx).squeeze(1)
 
-            y1 = t.gather(self.y_grid, 1, c_idx).squeeze(1)
+            y1_oracle = t.gather(self.y_grid, 1, c_idx).squeeze(1)
+            y1 = self._observe_y(y1_oracle)
             y = y1.unsqueeze(1)
 
             if self.mask_visited_actions:
@@ -309,6 +328,7 @@ class BatchedBOEnv():
 
             # Update state for active lanes in the batch
             self.best_current_value[active] = t.maximum(self.best_current_value[active], y1[active])
+            self.best_oracle_value[active] = t.maximum(self.best_oracle_value[active], y1_oracle[active])
 
             self.remaining_budget[active] -= cost[active]
             self.ep_len[active] += 1
@@ -323,7 +343,7 @@ class BatchedBOEnv():
 
         if (self.reward_type == 'final_neglog_regret') and terminal.any():
             ground_truth = self.y_grid.max(dim=1).values
-            regret = ground_truth - self.best_current_value
+            regret = ground_truth - self.best_oracle_value
             reward[terminal] = -t.log(t.clamp(regret[terminal], min=1e-12))
 
         self.ep_return[active] += reward[active]
@@ -335,7 +355,7 @@ class BatchedBOEnv():
             terminal_lanes = t.where(terminal)[0]
 
             ground_truth = self.y_grid.max(dim=1).values
-            regret = ground_truth - self.best_current_value
+            regret = ground_truth - self.best_oracle_value
 
             for i in terminal_lanes.tolist():
                 final_info[i] = {
@@ -375,6 +395,24 @@ class BatchedBOEnv():
             mask[no_valid] = True
 
         return mask
+    
+
+    def _observe_y(self, y_mean):
+        """
+        Convert latent objective values into observed objective values.
+
+        y_mean is the deterministic benchmark mean, usually from self.y_grid.
+        """
+        if self.objective_noise_std <= 0.0:
+            return y_mean
+
+        noise = t.randn_like(y_mean) * self.objective_noise_std
+        y_obs = y_mean + noise
+
+        if self.objective_noise_clip:
+            y_obs = y_obs.clamp(0.0, 1.0)
+
+        return y_obs
 
 
 
