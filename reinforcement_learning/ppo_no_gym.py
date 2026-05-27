@@ -185,6 +185,15 @@ if __name__ == "__main__":
                         if "best_value" in info:
                             writer.add_scalar("eval/best_value", info["best_value"], global_step)
 
+                        if "best_oracle_value" in info:
+                            writer.add_scalar("eval/best_oracle_value", info["best_oracle_value"], global_step)
+
+                        if "ground_truth" in info:
+                            writer.add_scalar("eval/ground_truth", info["ground_truth"], global_step)
+                            
+                        if "budget_used" in info:
+                            writer.add_scalar("eval/budget_used", info["budget_used"], global_step)
+
         # bootstrap value if not done
         with torch.no_grad():
             next_value = agent.get_value(next_obs).reshape(-1)

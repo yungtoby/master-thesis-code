@@ -363,8 +363,12 @@ class BatchedBOEnv():
                         'r': self.ep_return[i].item(),
                         'l': int(self.ep_len[i].item()),
                     },
-                    'regret': regret[i].item(),
-                    'best_value': self.best_current_value[i].item(),
+                    "regret": regret[i].item(),
+                    "best_value": self.best_current_value[i].item(),
+                    "best_oracle_value": self.best_oracle_value[i].item(),
+                    "ground_truth": ground_truth[i].item(),
+                    "remaining_budget": self.remaining_budget[i].item(),
+                    "budget_used": (self.budget - self.remaining_budget[i]).item(),
                 }
 
             info['final_info'] = final_info
