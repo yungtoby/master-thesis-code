@@ -34,13 +34,14 @@ def parse_args():
 
 
 def select_action(agent, obs, mask, action_mode: str):
-    if action_mode == "sample":
-        action, _, _, _ = agent.get_action_and_value(obs, action_mask=mask)
-        return action
+    with torch.no_grad():
+        if action_mode == "sample":
+            action, _, _, _ = agent.get_action_and_value(obs, action_mask=mask)
+            return action
 
-    if action_mode == "argmax":
-        logits = agent.get_logits(obs, action_mask=mask)
-        return torch.argmax(logits, dim=1)
+        if action_mode == "argmax":
+            logits = agent.get_logits(obs, action_mask=mask)
+            return torch.argmax(logits, dim=1)
 
     raise ValueError(f"Unknown action mode: {action_mode}")
 
@@ -91,7 +92,7 @@ def main():
     completed = 0
     step_count = 0
 
-    #with torch.no_grad():
+
     while completed < args.episodes:
         mask = env.get_action_mask()
         action = select_action(agent, obs, mask, args.action_mode)
