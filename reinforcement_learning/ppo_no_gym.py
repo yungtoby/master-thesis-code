@@ -41,6 +41,12 @@ def parse_args():
     )
     return parser.parse_args()
 
+# Function to format seconds to hours, min and sec
+def format_duration(seconds):
+    seconds = int(max(seconds, 0))
+    hours, rem = divmod(seconds, 3600)
+    minutes, seconds = divmod(rem, 60)
+    return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
 
 
 def make_env(cfg, device):
@@ -141,8 +147,15 @@ if __name__ == "__main__":
     # CHECKPOINT SETUP
     save_every = exp_cfg['save_every']
     next_save_step = save_every
-    checkpoint_dir = Path(exp_cfg.get("checkpoint_dir", "checkpoints"))
+
+    checkpoint_root = Path(exp_cfg.get("checkpoint_dir", "checkpoints"))
+    checkpoint_dir = checkpoint_root / run_name
     checkpoint_dir.mkdir(parents=True, exist_ok=True)
+
+    print(f"Run directory: {run_dir}")
+    print(f"Checkpoint directory: {checkpoint_dir}")
+
+    last_saved_step = -1
 
     for iteration in range(1, ppo_cfg['num_iterations'] + 1):
         # Annealing the rate if instructed to do so.
@@ -288,14 +301,38 @@ if __name__ == "__main__":
         writer.add_scalar("losses/approx_kl", approx_kl.item(), global_step)
         writer.add_scalar("losses/clipfrac", np.mean(clipfracs), global_step)
         writer.add_scalar("losses/explained_variance", explained_var, global_step)
-        print(f"Total time used: {(time.time() - start_time)/60:.2f} min")
-        print("SPS:", int(global_step / (time.time() - start_time)))
-        writer.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
+        elapsed = time.time() - start_time
+        sps = global_step / max(elapsed, 1e-8)
+        writer.add_scalar("charts/SPS", sps, global_step)
+
+        total_train_steps = (
+            ppo_cfg["num_iterations"]
+            * ppo_cfg["num_envs"]
+            * ppo_cfg["num_steps"]
+        )
+
+        remaining_steps = max(total_train_steps - global_step, 0)
+        eta_seconds = remaining_steps / max(sps, 1e-8)
+
+        print(
+            f"Step {global_step}/{total_train_steps} "
+            f"({100.0 * global_step / total_train_steps:.1f}%) | "
+            f"Elapsed {format_duration(elapsed)} | "
+            f"ETA {format_duration(eta_seconds)} | "
+            f"SPS {int(sps)}"
+        )
 
         if global_step >= next_save_step:
-            torch.save(agent.state_dict(), checkpoint_dir / f"model_step_{global_step}.pt")
+            ckpt_path = checkpoint_dir / f"model_step_{global_step}.pt"
+            torch.save(agent.state_dict(), ckpt_path)
+            print(f"Saved checkpoint: {ckpt_path}")
+
+            last_saved_step = global_step
             next_save_step += save_every
         
 
-    torch.save(agent.state_dict(), checkpoint_dir / f"model_step_{global_step}.pt")
+    final_ckpt_path = checkpoint_dir / f"model_final_step_{global_step}.pt"
+    torch.save(agent.state_dict(), final_ckpt_path)
+    print(f"Saved final checkpoint: {final_ckpt_path}")
+
     writer.close()
