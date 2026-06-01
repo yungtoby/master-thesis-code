@@ -15,8 +15,8 @@ from bo.problems.registry import build_problem_family
 class BatchedBOEnv():
     '''Batched environment for one BO episode.'''
     def __init__(self, device, dtype, num_batches, n_candidates, n_init, budget, max_acquisitions, reward_type,
-                 candidate_set_cfg, problem_family_cfg, gp_cfg, cost_model_cfg=None, mask_visited_actions=False,
-                 objective_noise_std=0.0, objective_noise_clip=True):
+                 candidate_set_cfg, problem_family_cfg, gp_cfg, cost_model_cfg=None, cost_feature_mode="predicted",
+                 mask_visited_actions=False, objective_noise_std=0.0, objective_noise_clip=True):
         # Device and dtype
         self.device = t.device(device)
         self.dtype = dtype
@@ -42,6 +42,7 @@ class BatchedBOEnv():
         self.gp_cfg = gp_cfg
         self.cost_model_cfg = cost_model_cfg or {'type':'known'}
         self.use_cost_gp = self.cost_model_cfg.get('type', 'known') == 'gp'
+        self.cost_feature_mode = cost_feature_mode
         self.mask_visited_actions = mask_visited_actions
         self.objective_noise_std = float(objective_noise_std)
         self.objective_noise_clip = bool(objective_noise_clip)
@@ -59,6 +60,14 @@ class BatchedBOEnv():
         self.best_oracle_value = None
         self.done = None
         self.visited = None
+
+        # Check for valid cost mode
+        valid_cost_feature_modes = {"predicted", "oracle", "none"}
+        if self.cost_feature_mode not in valid_cost_feature_modes:
+            raise ValueError(
+                f"Unknown cost_feature_mode={self.cost_feature_mode}. "
+                f"Expected one of {valid_cost_feature_modes}."
+            )
 
 
 
@@ -425,16 +434,24 @@ class BatchedBOEnv():
         pred = self.obj_gp.predict(self.X)  
         mu = pred.mean      
         sigma = pred.stddev
+    
+        if self.cost_feature_mode == "none":
+            cost = t.zeros_like(mu)
 
-        if self.use_cost_gp:
-            cost_pred = self.cost_gp.predict(self.X)
-            cost = self._gp_target_to_cost_mean(cost_pred)
-        
-        else:
+        elif self.cost_feature_mode == "oracle":
             cost = self.costs
 
-        max_cost = cost.max(dim=1, keepdim=True).values.expand_as(cost)
+        elif self.cost_feature_mode == "predicted":
+            if self.use_cost_gp:
+                cost_pred = self.cost_gp.predict(self.X)
+                cost = self._gp_target_to_cost_mean(cost_pred)
+            else:
+                cost = self.costs
 
+        else:
+            raise RuntimeError(f"Unhandled cost_feature_mode={self.cost_feature_mode}")
+
+        max_cost = cost.max(dim=1, keepdim=True).values.expand_as(cost)
         return mu, sigma, cost, max_cost
 
 

@@ -109,6 +109,7 @@ def main():
                 'ground_truth': info.get('ground_truth'),
                 'budget_used': info.get('budget_used'),
                 'remaining_budget': info.get('remaining_budget'),
+                'budget_overshoot': max(0.0, -float(info.get('remaining_budget', 0.0)))
             }
 
             rows.append(row)
@@ -134,6 +135,7 @@ def main():
         'ground_truth',
         'budget_used',
         'remaining_budget',
+        'budget_overshoot'
     ]
 
     # Write to csv file and save

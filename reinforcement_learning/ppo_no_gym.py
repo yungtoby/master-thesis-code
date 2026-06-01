@@ -68,6 +68,7 @@ def make_env(cfg, device):
         mask_visited_actions=env_cfg.get("mask_visited_actions", False),
         objective_noise_std=env_cfg.get("objective_noise_std", 0.0),
         objective_noise_clip=env_cfg.get("objective_noise_clip", True),
+        cost_feature_mode=env_cfg.get("cost_feature_mode", "predicted"),
     )
 
 
