@@ -11,33 +11,84 @@ from pathlib import Path
 import torch as t
 
 from reinforcement_learning.ppo_no_gym import make_env
-from reinforcement_learning.agents.neural_AF import Agent
 from utils.config import load_config
 from utils.seeding import seed_everything
+
+
+
+def expected_improvement(mu, sigma, best, eps=1e-9):
+    '''
+    Maximization EI.
+
+    mu:    [B, N]
+    sigma: [B, N]
+    best:  [B]
+    '''
+    sigma = sigma.clamp_min(eps)
+    improvement = mu - best.unsqueeze(1)
+
+    z = improvement / sigma
+    normal = t.distributions.Normal(
+        t.tensor(0.0, device=mu.device, dtype=mu.dtype),
+        t.tensor(1.0, device=mu.device, dtype=mu.dtype),
+    )
+
+    ei = improvement * normal.cdf(z) + sigma * t.exp(normal.log_prob(z))
+    return ei.clamp_min(0.0)
+
+
+
+def masked_argmax(scores, mask):
+    scores = scores.masked_fill(~mask, -t.inf)
+    return t.argmax(scores, dim=1)
+
+
+
+def masked_random(mask):
+    probs = mask.float()
+    probs = probs / probs.sum(dim=1, keepdim=True).clamp_min(1.0)
+    return t.multinomial(probs, num_samples=1).squeeze(1)
+
+
+
+def select_baseline_action(env, obs, mask, method: str):
+    mu = obs[..., 0]    # [..., 0] same as [:, :, ..., :, 0]
+    sigma = obs[..., 1]
+    cost = (obs[..., 2] * env.budget).clamp_min(1e-8)
+    best = env.best_current_value
+
+    if method == 'random':
+        return masked_random(mask)
+
+    ei = expected_improvement(mu, sigma, best)
+
+    if method == 'ei':
+        scores = ei
+
+    elif method == 'eipu':
+        scores = ei / cost
+
+    elif method == 'ei_cool':
+        # alpha = remaining budget fraction.
+        # Early: alpha approx 1 -> EI / cost.
+        # Late:  alpha approx 0 -> EI.
+        alpha = (env.remaining_budget / env.budget).clamp(0.0, 1.0).unsqueeze(1)
+        scores = ei / cost.pow(alpha)
+
+    else:
+        raise ValueError(f'Unknown baseline method: {method}')
+
+    return masked_argmax(scores, mask)
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', type=str, required=True)
-    parser.add_argument('--checkpoint', type=str, default=None)
+    parser.add_argument('--method', type=str, choices=['random', 'ei', 'eipu', 'ei_cool'], required=True)
     parser.add_argument('--episodes', type=int, default=100)
-    parser.add_argument('--action-mode', type=str, choices=['sample', 'argmax'], default='argmax')
-    parser.add_argument('--output', type=str, default='eval_results.csv')
+    parser.add_argument('--output', type=str, required=True)
     parser.add_argument('--seed', type=int, default=None)
     return parser.parse_args()
-
-
-def select_action(agent, obs, mask, action_mode: str):
-    with t.no_grad():
-        if action_mode == 'sample':
-            action, _, _, _ = agent.get_action_and_value(obs, action_mask=mask)
-            return action
-
-        if action_mode == 'argmax':
-            logits = agent.get_logits(obs, action_mask=mask)
-            return t.argmax(logits, dim=1)
-
-    raise ValueError(f'Unknown action mode: {action_mode}')
 
 
 def main():
@@ -45,12 +96,8 @@ def main():
     args = parse_args()
     cfg = load_config(args.config)
 
-    # Extract main parts of config
+    # Extract part of config needed and seed everything
     exp_cfg = cfg['experiment']
-    ppo_cfg = cfg['ppo']
-    agent_cfg = cfg['agent']
-
-    # Set seed and device
     seed = args.seed if args.seed is not None else exp_cfg['seed']
     seed_everything(seed=seed, deterministic=exp_cfg['torch_deterministic'])
     device = t.device('cuda' if t.cuda.is_available() and exp_cfg['cuda'] else 'cpu')
@@ -58,20 +105,6 @@ def main():
     # Create environment and get initial observation
     env = make_env(cfg, device)
     obs = env.reset(seed=seed, deterministic=exp_cfg['torch_deterministic'])
-
-    # Retrieve environment observation dimension shape for further computation
-    _, _, d = obs.shape
-
-    # Initialize agent
-    agent = Agent(d, int(d / 2), 1, 1, agent_cfg['num_layers'], agent_cfg['layer_size']).to(device)
-    
-    # Load checkpoint if not none
-    if args.checkpoint is not None:
-        state_dict = t.load(args.checkpoint, map_location=device)
-        agent.load_state_dict(state_dict)
-
-    # Set agent to eval mode 
-    agent.eval()
 
     # Init counters
     rows = []
@@ -83,14 +116,15 @@ def main():
 
         # Get action and do one step in environment
         mask = env.get_action_mask()
-        action = select_action(agent, obs, mask, args.action_mode)
+        with t.no_grad():
+            action = select_baseline_action(env, obs, mask, args.method)
         obs, reward, terminals, infos = env.step(action)
         step_count += 1
 
         # If an episode is not done, continue
         if 'final_info' not in infos:
             continue
-        
+
         # If an episode is done, append results to row list
         for lane, info in enumerate(infos['final_info']):
             if info is None:
@@ -100,7 +134,7 @@ def main():
                 'episode_index': completed,
                 'lane': lane,
                 'step_count': step_count,
-                'action_mode': args.action_mode,
+                'method': args.method,
                 'return': info['episode']['r'],
                 'episode_length': info['episode']['l'],
                 'regret': info.get('regret'),
@@ -109,6 +143,7 @@ def main():
                 'ground_truth': info.get('ground_truth'),
                 'budget_used': info.get('budget_used'),
                 'remaining_budget': info.get('remaining_budget'),
+                'budget_overshoot': max(0.0, -float(info.get('remaining_budget', 0.0))),
             }
 
             rows.append(row)
@@ -116,7 +151,7 @@ def main():
 
             if completed >= args.episodes:
                 break
-    
+
     # Make directory to save CSV File
     output_path = Path(args.output)
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -125,7 +160,7 @@ def main():
         'episode_index',
         'lane',
         'step_count',
-        'action_mode',
+        'method',
         'return',
         'episode_length',
         'regret',
@@ -134,6 +169,7 @@ def main():
         'ground_truth',
         'budget_used',
         'remaining_budget',
+        'budget_overshoot',
     ]
 
     # Write to csv file and save
