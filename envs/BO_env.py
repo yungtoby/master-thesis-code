@@ -369,6 +369,7 @@ class BatchedBOEnv():
                     "ground_truth": ground_truth[i].item(),
                     "remaining_budget": self.remaining_budget[i].item(),
                     "budget_used": (self.budget - self.remaining_budget[i]).item(),
+                    "budget_overshoot": max(0.0, -self.remaining_budget[i].item())    # How far over are we from the budget
                 }
 
             info['final_info'] = final_info
