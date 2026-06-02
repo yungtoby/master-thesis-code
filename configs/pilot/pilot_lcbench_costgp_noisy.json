@@ -1,6 +1,6 @@
 {
   "experiment": {
-    "name": "yahpo_lcbench_nocost_debug",
+    "name": "yahpo_lcbench_debug",
     "env_id": "CostAwareBO-YAHPO-LCBench",
     "seed": 1,
     "torch_deterministic": true,
@@ -11,7 +11,7 @@
   },
 
   "ppo": {
-    "total_timesteps": 16384,
+    "total_timesteps": 262144,
     "learning_rate": 0.0001,
     "num_envs": 256,
     "num_steps": 32,
@@ -43,7 +43,7 @@
     "max_acquisitions": 30,
     "reward_type": "final_neglog_regret",
     "mask_visited_actions": false,
-    "cost_feature_mode": "none",
+    "cost_feature_mode": "predicted",
     "objective_noise_std": 0.01,
     "objective_noise_clip": true
   },
@@ -68,7 +68,7 @@
   },
 
   "cost_model": {
-    "type": "known",
+    "type": "gp",
     "target_transform": "log1p",
     "include_uncertainty": false
   }
