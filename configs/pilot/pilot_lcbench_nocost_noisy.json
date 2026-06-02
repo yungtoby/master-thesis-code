@@ -1,6 +1,6 @@
 {
   "experiment": {
-    "name": "yahpo_lcbench_nocost_debug",
+    "name": "pilot_lcbench_nocost_noisy",
     "env_id": "CostAwareBO-YAHPO-LCBench",
     "seed": 1,
     "torch_deterministic": true,
