@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Optional
+from collections import defaultdict
 import random
 import numpy as np
 import torch as t
@@ -59,47 +60,66 @@ class YAHPOLCBenchProblemFamily(BaseProblemFamily):
         # Initialize bounds from the first instance
         self._init_bounds(self.instances[0])
 
-
-
-    def build_candidate_cache(self, B, n_candidates, seed = None):
+    def build_candidate_cache(self, B, n_candidates, seed=None):
         rng = random.Random(seed)
 
-        # Initialize empty tensors
-        X = t.empty((B, n_candidates, len(self.feature_keys)), device=self.device, dtype=self.dtype)
+        X = t.empty(
+            (B, n_candidates, len(self.feature_keys)),
+            device=self.device,
+            dtype=self.dtype,
+        )
         y_grid = t.empty((B, n_candidates), device=self.device, dtype=self.dtype)
         costs = t.empty((B, n_candidates), device=self.device, dtype=self.dtype)
 
-        instances = []
-        raw_configs = []
+        # Sample one benchmark instance per lane.
+        instances = [rng.choice(self.instances) for _ in range(B)]
 
-        # For each lane:
-        for b_idx in range(B):
-            
-            # Choose an instance out of the scenario
-            instance = rng.choice(self.instances)
-            instances.append(instance)
+        # Group lane indices by instance.
+        lanes_by_instance = defaultdict(list)
+        for lane_idx, instance in enumerate(instances):
+            lanes_by_instance[instance].append(lane_idx)
 
-            lane_configs = []
+        raw_configs = [None for _ in range(B)]
 
-            # Sample configs
-            configs = self._sample_configs(instance, n_candidates)
+        # Evaluate all lanes belonging to the same instance in one batch.
+        for instance, lane_indices in lanes_by_instance.items():
+            n_lanes = len(lane_indices)
+            total_configs = n_lanes * n_candidates
+
+            configs = self._sample_configs(instance, total_configs)
             ys, cs = self._evaluate_configs(instance, configs)
 
-            for n_idx, cfg in enumerate(configs):
-                # Append lane config to list of lane configs
-                lane_configs.append(cfg)
+            if len(configs) != total_configs:
+                raise RuntimeError(
+                    f"Expected {total_configs} configs, got {len(configs)}."
+                )
+            if len(ys) != total_configs or len(cs) != total_configs:
+                raise RuntimeError(
+                    f"YAHPO returned wrong number of outputs for instance {instance}."
+                )
 
-                # Insert tensor into X tensor
-                X[b_idx, n_idx] = t.tensor(self._encode_config(cfg), device=self.device, dtype=self.dtype)
-                
-                y_grid[b_idx, n_idx] = ys[n_idx]
-                costs[b_idx, n_idx] = cs[n_idx]
+            for local_lane_idx, lane_idx in enumerate(lane_indices):
+                start = local_lane_idx * n_candidates
+                end = start + n_candidates
 
-            raw_configs.append(lane_configs)
+                lane_configs = configs[start:end]
+                lane_ys = ys[start:end]
+                lane_cs = cs[start:end]
+
+                raw_configs[lane_idx] = lane_configs
+
+                for n_idx, cfg in enumerate(lane_configs):
+                    X[lane_idx, n_idx] = t.tensor(
+                        self._encode_config(cfg),
+                        device=self.device,
+                        dtype=self.dtype,
+                    )
+                    y_grid[lane_idx, n_idx] = lane_ys[n_idx]
+                    costs[lane_idx, n_idx] = lane_cs[n_idx]
 
         params = {
-            'instances': instances,
-            'raw_configs': raw_configs,
+            "instances": instances,
+            "raw_configs": raw_configs,
         }
 
         return X, y_grid, costs, params
@@ -253,3 +273,51 @@ class YAHPOLCBenchProblemFamily(BaseProblemFamily):
             'YAHPOLCBenchProblemFamily should be used through build_candidate_cache(), '
             'not costs(X, params).'
         )
+    
+
+
+
+
+    # ARCHIVED
+    def build_candidate_cache_ARCHIVED(self, B, n_candidates, seed = None):
+        rng = random.Random(seed)
+
+        # Initialize empty tensors
+        X = t.empty((B, n_candidates, len(self.feature_keys)), device=self.device, dtype=self.dtype)
+        y_grid = t.empty((B, n_candidates), device=self.device, dtype=self.dtype)
+        costs = t.empty((B, n_candidates), device=self.device, dtype=self.dtype)
+
+        instances = []
+        raw_configs = []
+
+        # For each lane:
+        for b_idx in range(B):
+            
+            # Choose an instance out of the scenario
+            instance = rng.choice(self.instances)
+            instances.append(instance)
+
+            lane_configs = []
+
+            # Sample configs
+            configs = self._sample_configs(instance, n_candidates)
+            ys, cs = self._evaluate_configs(instance, configs)
+
+            for n_idx, cfg in enumerate(configs):
+                # Append lane config to list of lane configs
+                lane_configs.append(cfg)
+
+                # Insert tensor into X tensor
+                X[b_idx, n_idx] = t.tensor(self._encode_config(cfg), device=self.device, dtype=self.dtype)
+                
+                y_grid[b_idx, n_idx] = ys[n_idx]
+                costs[b_idx, n_idx] = cs[n_idx]
+
+            raw_configs.append(lane_configs)
+
+        params = {
+            'instances': instances,
+            'raw_configs': raw_configs,
+        }
+
+        return X, y_grid, costs, params
