@@ -131,6 +131,7 @@ def main():
                 continue
 
             row = {
+                'instance': info.get('instance'),
                 'episode_index': completed,
                 'lane': lane,
                 'step_count': step_count,
@@ -157,6 +158,7 @@ def main():
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     fieldnames = [
+        'instance',
         'episode_index',
         'lane',
         'step_count',

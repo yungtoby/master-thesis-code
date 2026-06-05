@@ -367,11 +367,16 @@ class BatchedBOEnv():
             regret = ground_truth - self.best_oracle_value
 
             for i in terminal_lanes.tolist():
+                instance = None
+                if isinstance(self.params, dict) and "instances" in self.params:
+                    instance = self.params["instances"][i]
+
                 final_info[i] = {
                     'episode': {
                         'r': self.ep_return[i].item(),
                         'l': int(self.ep_len[i].item()),
                     },
+                    "instance": instance,
                     "regret": regret[i].item(),
                     "best_value": self.best_current_value[i].item(),
                     "best_oracle_value": self.best_oracle_value[i].item(),
