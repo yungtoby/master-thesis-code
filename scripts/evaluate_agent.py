@@ -22,6 +22,7 @@ def parse_args():
     parser.add_argument('--checkpoint', type=str, default=None)
     parser.add_argument('--episodes', type=int, default=100)
     parser.add_argument('--action-mode', type=str, choices=['sample', 'argmax'], default='argmax')
+    parser.add_argument("--episodes-per-instance", type=int, default=None, help="If set, collect this many completed episodes per instance.")
     parser.add_argument('--output', type=str, default='eval_results.csv')
     parser.add_argument('--seed', type=int, default=None)
     return parser.parse_args()
@@ -78,8 +79,17 @@ def main():
     completed = 0
     step_count = 0
 
+    # Initialize counter dict for completed instances
+    problem_cfg = cfg["problem_family"]
+    target_instances = [str(x) for x in problem_cfg["instances"]]
+    completed_by_instance = {inst: 0 for inst in target_instances}
+    done_collecting = False
+
+
     # Start evaluation loop
-    while completed < args.episodes:
+    while not done_collecting:
+        if step_count % 100 == 0 and args.episodes_per_instance is not None:
+            print(completed_by_instance)
 
         # Get action and do one step in environment
         mask = env.get_action_mask()
@@ -95,6 +105,19 @@ def main():
         for lane, info in enumerate(infos['final_info']):
             if info is None:
                 continue
+            
+            # If episodes per instance and specific instance is completed, continue.
+            instance = str(info.get("instance"))
+            if args.episodes_per_instance is not None:
+                if instance not in completed_by_instance:
+                    continue
+
+                if completed_by_instance[instance] >= args.episodes_per_instance:
+                    continue
+            
+            # If not, increment count
+            completed_by_instance[instance] += 1
+
 
             row = {
                 'instance': info.get('instance'),
@@ -118,6 +141,11 @@ def main():
 
             if completed >= args.episodes:
                 break
+
+            if args.episodes_per_instance is not None:
+                done_collecting = all(count >= args.episodes_per_instance for count in completed_by_instance.values())
+            else:
+                done_collecting = completed >= args.episodes
     
     # Make directory to save CSV File
     output_path = Path(args.output)

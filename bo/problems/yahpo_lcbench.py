@@ -60,6 +60,8 @@ class YAHPOLCBenchProblemFamily(BaseProblemFamily):
         # Initialize bounds from the first instance
         self._init_bounds(self.instances[0])
 
+
+
     def build_candidate_cache(self, B, n_candidates, seed=None):
         rng = random.Random(seed)
 
