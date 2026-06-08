@@ -3,7 +3,7 @@
 ## Ablation studies / Sensitivity Experiments:
 
 
-- **Experiment 1**: &nbsp; ...
+- **Experiment 3**: &nbsp; Cost uncertainty ablation (costgp w. only mean / costgp w. mean and unc / no-cost)
 - **Experiment 2**: &nbsp; ...
 
 
