@@ -16,7 +16,8 @@ class BatchedBOEnv():
     '''Batched environment for one BO episode.'''
     def __init__(self, device, dtype, num_batches, n_candidates, n_init, budget, max_acquisitions, reward_type,
                  candidate_set_cfg, problem_family_cfg, gp_cfg, cost_model_cfg=None, cost_feature_mode="predicted",
-                 mask_visited_actions=False, objective_noise_std=0.0, objective_noise_clip=True):
+                 mask_visited_actions=False, objective_noise_std=0.0, objective_noise_clip=True, use_cost_uncertainty_feature=False,
+                 observation_format="cost6"):
         # Device and dtype
         self.device = t.device(device)
         self.dtype = dtype
@@ -46,6 +47,8 @@ class BatchedBOEnv():
         self.mask_visited_actions = mask_visited_actions
         self.objective_noise_std = float(objective_noise_std)
         self.objective_noise_clip = bool(objective_noise_clip)
+        self.use_cost_uncertainty_feature = bool(use_cost_uncertainty_feature)
+        self.observation_format = observation_format
         
 
         # Internal state
@@ -61,12 +64,20 @@ class BatchedBOEnv():
         self.done = None
         self.visited = None
 
-        # Check for valid cost mode
+        # Check for valid cost mode and observation formats
         valid_cost_feature_modes = {"predicted", "oracle", "none"}
+        valid_observation_formats = {"cost6", "cost7"}
+
         if self.cost_feature_mode not in valid_cost_feature_modes:
             raise ValueError(
                 f"Unknown cost_feature_mode={self.cost_feature_mode}. "
                 f"Expected one of {valid_cost_feature_modes}."
+            )
+        
+        if self.observation_format not in valid_observation_formats:
+            raise ValueError(
+                f"Unknown observation_format={self.observation_format}. "
+                f"Expected one of {valid_observation_formats}."
             )
 
 
@@ -439,6 +450,8 @@ class BatchedBOEnv():
         pred = self.obj_gp.predict(self.X)  
         mu = pred.mean      
         sigma = pred.stddev
+
+        cost_std = t.zeros_like(mu)
     
         if self.cost_feature_mode == "none":
             cost = t.zeros_like(mu)
@@ -450,6 +463,9 @@ class BatchedBOEnv():
             if self.use_cost_gp:
                 cost_pred = self.cost_gp.predict(self.X)
                 cost = self._gp_target_to_cost_mean(cost_pred)
+
+                if self.use_cost_uncertainty_feature:
+                    cost_std = self._gp_target_to_cost_std(cost_pred)
             else:
                 cost = self.costs
 
@@ -457,7 +473,7 @@ class BatchedBOEnv():
             raise RuntimeError(f"Unhandled cost_feature_mode={self.cost_feature_mode}")
 
         max_cost = cost.max(dim=1, keepdim=True).values.expand_as(cost)
-        return mu, sigma, cost, max_cost
+        return mu, sigma, cost, cost_std, max_cost
 
 
     def _cost_to_gp_target(self, cost):
@@ -485,8 +501,22 @@ class BatchedBOEnv():
 
         raise ValueError(f'Unknown cost target transform: {transform}')
     
+    def _gp_target_to_cost_std(self, pred):
+        transform = self.cost_model_cfg.get("target_transform", "log1p")
 
-    def _build_obs(self, mu, sigma, cost, max_cost):
+        if transform == "log1p":
+            # Delta-method approximation:
+            # if z = log(1 + c), then c = exp(z) - 1,
+            # dc/dz = exp(z).
+            return (t.exp(pred.mean) * pred.stddev).clamp_min(0.0)
+
+        if transform == "none":
+            return pred.stddev.clamp_min(0.0)
+
+        raise ValueError(f"Unknown cost target transform: {transform}")
+    
+
+    def _build_obs(self, mu, sigma, cost, cost_std, max_cost):
         B, N = mu.shape
 
         # global progress (time spent fraction) or remaining fraction
@@ -495,8 +525,36 @@ class BatchedBOEnv():
         # best so far
         best = self.best_current_value.unsqueeze(1).expand(B, N)
 
+        if self.observation_format == "cost6":
+            obs = t.stack(
+                [
+                    mu,
+                    sigma,
+                    cost / self.budget,
+                    progress,
+                    best,
+                    max_cost / self.budget,
+                ],
+                dim=-1,
+            )
 
-        obs = t.stack([mu, sigma, cost / self.budget, progress, best, max_cost / self.budget], dim=-1)  # [B,N,6]
+        elif self.observation_format == "cost7":
+            obs = t.stack(
+                [
+                    mu,
+                    sigma,
+                    cost / self.budget,
+                    cost_std / self.budget,
+                    progress,
+                    best,
+                    max_cost / self.budget,
+                ],
+                dim=-1,
+            )
+
+        else:
+            raise RuntimeError(f"Unhandled observation_format={self.observation_format}")
+
         return obs
     
 

@@ -21,7 +21,7 @@ class Agent(nn.Module):
 
 
     def get_value(self, obs):
-        return self.critic(obs[:, 0 ,3:6]).squeeze(-1)
+        return self.critic(obs[:, 0, -3:]).squeeze(-1)
 
     
     def get_logits(self, obs, action_mask=None):
