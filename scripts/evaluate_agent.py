@@ -80,16 +80,20 @@ def main():
     step_count = 0
 
     # Initialize counter dict for completed instances
-    problem_cfg = cfg["problem_family"]
-    target_instances = [str(x) for x in problem_cfg["instances"]]
-    completed_by_instance = {inst: 0 for inst in target_instances}
-    done_collecting = False
+    if args.episodes_per_instance is not None:
+        problem_cfg = cfg["problem_family"]
+        if "instances" not in problem_cfg:
+            raise ValueError(
+                "--episodes-per-instance requires problem_family.instances in the config."
+            )
 
+        target_instances = [str(x) for x in problem_cfg["instances"]]
+        completed_by_instance = {inst: 0 for inst in target_instances}
+
+    done_collecting = False
 
     # Start evaluation loop
     while not done_collecting:
-        if step_count % 100 == 0 and args.episodes_per_instance is not None:
-            print(completed_by_instance)
 
         # Get action and do one step in environment
         mask = env.get_action_mask()
@@ -139,7 +143,7 @@ def main():
             rows.append(row)
             completed += 1
 
-            if completed >= args.episodes:
+            if args.episodes_per_instance is None and completed >= args.episodes:
                 break
 
             if args.episodes_per_instance is not None:
