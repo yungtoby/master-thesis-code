@@ -17,7 +17,7 @@ class BatchedBOEnv():
     def __init__(self, device, dtype, num_batches, n_candidates, n_init, budget, max_acquisitions, reward_type,
                  candidate_set_cfg, problem_family_cfg, gp_cfg, cost_model_cfg=None, cost_feature_mode="predicted",
                  mask_visited_actions=False, objective_noise_std=0.0, objective_noise_clip=True, use_cost_uncertainty_feature=False,
-                 observation_format="cost6"):
+                 observation_format="cost6", reward_scale=1.0):
         # Device and dtype
         self.device = t.device(device)
         self.dtype = dtype
@@ -49,6 +49,7 @@ class BatchedBOEnv():
         self.objective_noise_clip = bool(objective_noise_clip)
         self.use_cost_uncertainty_feature = bool(use_cost_uncertainty_feature)
         self.observation_format = observation_format
+        self.reward_scale = float(reward_scale)
         
 
         # Internal state
@@ -364,7 +365,9 @@ class BatchedBOEnv():
         if (self.reward_type == 'final_neglog_regret') and terminal.any():
             ground_truth = self.y_grid.max(dim=1).values
             regret = ground_truth - self.best_oracle_value
-            reward[terminal] = -t.log(t.clamp(regret[terminal], min=1e-12))
+            reward[terminal] = self.reward_scale * (
+                -t.log(t.clamp(regret[terminal], min=1e-12))
+            )
 
         self.ep_return[active] += reward[active]
 

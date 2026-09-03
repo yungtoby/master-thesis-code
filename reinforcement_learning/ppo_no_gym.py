@@ -146,7 +146,8 @@ def make_env(cfg, device):
         objective_noise_clip=env_cfg.get("objective_noise_clip", True),
         cost_feature_mode=env_cfg.get("cost_feature_mode", "predicted"),
         use_cost_uncertainty_feature=env_cfg.get("use_cost_uncertainty_feature", False),
-        observation_format=env_cfg.get("observation_format", "cost6")
+        observation_format=env_cfg.get("observation_format", "cost6"),
+        reward_scale=env_cfg.get("reward_scale", 1.0)
     )
 
 
