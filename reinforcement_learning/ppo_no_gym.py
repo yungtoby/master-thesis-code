@@ -440,9 +440,14 @@ if __name__ == "__main__":
                 total_grad_norms_pre_clip.append(total_grad_pre)
                 actor_grad_norms_post_clip.append(actor_grad_post)
                 critic_grad_norms_post_clip.append(critic_grad_post)
-                grad_was_clipped.append(
-                    float(total_grad_pre > ppo_cfg['max_grad_norm'])
-                )
+                if grad_clip_mode == "combined":
+                    was_clipped = total_grad_pre > ppo_cfg["max_grad_norm"]
+                else:
+                    was_clipped = (
+                        actor_grad_pre > ppo_cfg["max_grad_norm"]
+                        or critic_grad_pre > ppo_cfg["max_grad_norm"]
+                    )
+                grad_was_clipped.append(float(was_clipped))
 
             if ppo_cfg['target_kl'] is not None and approx_kl > ppo_cfg['target_kl']:
                 break
