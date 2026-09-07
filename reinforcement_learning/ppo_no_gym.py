@@ -201,7 +201,12 @@ if __name__ == "__main__":
     # Agent setup
     ####### DEBUG FOR CONVERGENCE #######
     # agent = Agent(d, int(d/2), 1, 1, agent_cfg['num_layers'], agent_cfg['layer_size']).to(device)
-    agent = Agent(d, 11, 1, 1, agent_cfg['num_layers'], agent_cfg['layer_size']).to(device)
+    critic_feature_mode = agent_cfg.get(
+        "critic_feature_mode",
+        "global3",
+    )
+
+    agent = Agent(d, d, 1, 1, agent_cfg['num_layers'], agent_cfg['layer_size'], critic_feature_mode).to(device)
     ######################################
     optimizer = optim.Adam(agent.parameters(), lr=ppo_cfg['learning_rate'], eps=1e-5)
 

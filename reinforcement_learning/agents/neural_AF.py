@@ -5,11 +5,13 @@ import torch as t
 
 class Agent(nn.Module):
     '''Actor Critic Network ...'''
-    def __init__(self, in_features_act, in_features_cri, out_features_act, out_features_cri, num_layers, layer_size):
+    def __init__(self, observation_dim, in_features_act, out_features_act, out_features_cri, num_layers, layer_size, critic_feature_mode="global3"):
         super(Agent, self).__init__()
 
+        self.observation_dim = observation_dim
+        self.critic_feature_mode = critic_feature_mode
+
         self.in_features_act = in_features_act
-        self.in_features_cri = in_features_cri
 
         self.out_features_act = out_features_act
         self.out_features_cri = out_features_cri
@@ -18,26 +20,40 @@ class Agent(nn.Module):
         self.layer_size = layer_size
 
         self.actor = self.initialize_mlp(in_features_act, out_features_act)
-        self.critic = self.initialize_mlp(in_features_cri, out_features_cri)
+        self.critic = self.initialize_mlp(self.critic_input_dim(observation_dim, critic_feature_mode), out_features_cri)
 
 
-    def get_value_OLD(self, obs):
-        return self.critic(obs[:, 0, -3:]).squeeze(-1)
+    @staticmethod
+    def critic_input_dim(observation_dim, mode):
+        if mode == "global3":
+            return 3
+
+        if mode == "mean_max_global":
+            local_dim = observation_dim - 3
+            return 2 * local_dim + 3
+
+        raise ValueError(f"Unknown critic_feature_mode={mode}")
+
+
+    def get_critic_features(self, obs):
+        if self.critic_feature_mode == "global3":
+            return obs[:, 0, -3:]
+
+        local = obs[..., :-3]
+        global_features = obs[:, 0, -3:]
+
+        return t.cat(
+            [
+                local.mean(dim=1),
+                local.max(dim=1).values,
+                global_features,
+            ],
+            dim=-1,
+        )
+
 
     def get_value(self, obs):
-        # obs shape: [batch_size, n_candidates, 7]
-        local_features = obs[..., :-3]   # [batch_size, n_candidates, 4]
-        global_features = obs[:, 0, -3:] # [batch_size, 3]
-
-        local_mean = local_features.mean(dim=1)       # [batch_size, 4]
-        local_max = local_features.max(dim=1).values  # [batch_size, 4]
-
-        critic_input = t.cat(
-            [local_mean, local_max, global_features],
-            dim=-1,
-        )  # [batch_size, 11]
-
-        return self.critic(critic_input).squeeze(-1)  # [batch_size]
+        return self.critic(self.get_critic_features(obs)).squeeze(-1)
 
     
     def get_logits(self, obs, action_mask=None):

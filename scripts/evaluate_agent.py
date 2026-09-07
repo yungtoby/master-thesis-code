@@ -64,7 +64,12 @@ def main():
     _, _, d = obs.shape
 
     # Initialize agent
-    agent = Agent(d, int(d / 2), 1, 1, agent_cfg['num_layers'], agent_cfg['layer_size']).to(device)
+    critic_feature_mode = agent_cfg.get(
+        "critic_feature_mode",
+        "global3",
+    )
+    
+    agent = Agent(d, d, 1, 1, agent_cfg['num_layers'], agent_cfg['layer_size'], critic_feature_mode).to(device)
     
     # Load checkpoint if not none
     if args.checkpoint is not None:

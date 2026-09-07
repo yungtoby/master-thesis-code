@@ -1,6 +1,6 @@
 {
   "experiment": {
-    "name": "debug_cost_mean_separate_grad_clip_scaled_new_critic",
+    "name": "debug_cost_mean_test8_scaled_new_critic",
     "env_id": "CostAwareBO-YAHPO-LCBench",
     "seed": 1,
     "torch_deterministic": true,
@@ -60,26 +60,14 @@
   "problem_family": {
     "type": "yahpo_lcbench",
     "instances": [
-      "3945",
-      "7593",
-      "34539",
-      "126025",
-      "126026",
-      "126029",
-      "146212",
-      "167104",
-      "167149",
-      "167152",
-      "167161",
-      "167168",
-      "167181",
-      "167184",
-      "167185",
-      "167190",
-      "167200",
-      "167201",
-      "168329",
-      "168330"
+      "168331",
+      "168335",
+      "168868",
+      "168908",
+      "168910",
+      "189354",
+      "189862",
+      "189865"
     ],
     "objective_key": "val_accuracy",
     "objective_scale": 0.01,
