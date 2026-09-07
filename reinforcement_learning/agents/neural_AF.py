@@ -1,5 +1,6 @@
 from torch.distributions import Categorical
 from torch import nn
+import torch as t
 
 
 class Agent(nn.Module):
@@ -20,8 +21,23 @@ class Agent(nn.Module):
         self.critic = self.initialize_mlp(in_features_cri, out_features_cri)
 
 
-    def get_value(self, obs):
+    def get_value_OLD(self, obs):
         return self.critic(obs[:, 0, -3:]).squeeze(-1)
+
+    def get_value(self, obs):
+        # obs shape: [batch_size, n_candidates, 7]
+        local_features = obs[..., :-3]   # [batch_size, n_candidates, 4]
+        global_features = obs[:, 0, -3:] # [batch_size, 3]
+
+        local_mean = local_features.mean(dim=1)       # [batch_size, 4]
+        local_max = local_features.max(dim=1).values  # [batch_size, 4]
+
+        critic_input = t.cat(
+            [local_mean, local_max, global_features],
+            dim=-1,
+        )  # [batch_size, 11]
+
+        return self.critic(critic_input).squeeze(-1)  # [batch_size]
 
     
     def get_logits(self, obs, action_mask=None):

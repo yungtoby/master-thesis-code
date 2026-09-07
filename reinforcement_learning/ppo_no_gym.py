@@ -199,7 +199,10 @@ if __name__ == "__main__":
     B, N, d = next_obs.shape
 
     # Agent setup
-    agent = Agent(d, int(d/2), 1, 1, agent_cfg['num_layers'], agent_cfg['layer_size']).to(device)
+    ####### DEBUG FOR CONVERGENCE #######
+    # agent = Agent(d, int(d/2), 1, 1, agent_cfg['num_layers'], agent_cfg['layer_size']).to(device)
+    agent = Agent(d, 11, 1, 1, agent_cfg['num_layers'], agent_cfg['layer_size']).to(device)
+    ######################################
     optimizer = optim.Adam(agent.parameters(), lr=ppo_cfg['learning_rate'], eps=1e-5)
 
     ####### DEBUG FOR CONVERGENCE #######
@@ -416,6 +419,7 @@ if __name__ == "__main__":
                         agent.critic.parameters(),
                         ppo_cfg["max_grad_norm"],
                     )
+                ######################################
 
                 actor_grad_post = grad_l2_norm(agent.actor.parameters())
                 critic_grad_post = grad_l2_norm(agent.critic.parameters())
