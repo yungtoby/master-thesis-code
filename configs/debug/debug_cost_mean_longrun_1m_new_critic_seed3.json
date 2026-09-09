@@ -1,6 +1,6 @@
 {
   "experiment": {
-    "name": "debug_cost_mean_longrun_1m_new_critic",
+    "name": "debug_cost_mean_longrun_1m_new_critic_seed3",
     "env_id": "CostAwareBO-YAHPO-LCBench",
     "seed": 3,
     "torch_deterministic": true,
