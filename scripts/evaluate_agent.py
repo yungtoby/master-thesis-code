@@ -85,6 +85,7 @@ def main():
     step_count = 0
 
     # Initialize counter dict for completed instances
+    completed_by_instance = None
     if args.episodes_per_instance is not None:
         problem_cfg = cfg["problem_family"]
         if "instances" not in problem_cfg:
@@ -123,10 +124,10 @@ def main():
 
                 if completed_by_instance[instance] >= args.episodes_per_instance:
                     continue
-            
-            # If not, increment count
-            completed_by_instance[instance] += 1
 
+            if completed_by_instance is not None:
+                # If not, increment count
+                completed_by_instance[instance] += 1
 
             row = {
                 'instance': info.get('instance'),
@@ -148,13 +149,13 @@ def main():
             rows.append(row)
             completed += 1
 
-            if args.episodes_per_instance is None and completed >= args.episodes:
-                break
-
-            if args.episodes_per_instance is not None:
+            if completed_by_instance is not None:
                 done_collecting = all(count >= args.episodes_per_instance for count in completed_by_instance.values())
             else:
                 done_collecting = completed >= args.episodes
+
+            if done_collecting:
+                break
     
     # Make directory to save CSV File
     output_path = Path(args.output)

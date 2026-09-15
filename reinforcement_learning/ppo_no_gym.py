@@ -198,26 +198,20 @@ if __name__ == "__main__":
     next_obs = env.reset(seed=exp_cfg['seed'], deterministic=exp_cfg['torch_deterministic'])
     B, N, d = next_obs.shape
 
-    # Agent setup
-    ####### DEBUG FOR CONVERGENCE #######
-    # agent = Agent(d, int(d/2), 1, 1, agent_cfg['num_layers'], agent_cfg['layer_size']).to(device)
     critic_feature_mode = agent_cfg.get(
         "critic_feature_mode",
         "global3",
     )
 
     agent = Agent(d, d, 1, 1, agent_cfg['num_layers'], agent_cfg['layer_size'], critic_feature_mode).to(device)
-    ######################################
     optimizer = optim.Adam(agent.parameters(), lr=ppo_cfg['learning_rate'], eps=1e-5)
 
-    ####### DEBUG FOR CONVERGENCE #######
     grad_clip_mode = ppo_cfg.get("grad_clip_mode", "combined")
     if grad_clip_mode not in {"combined", "separate"}:
         raise ValueError(
             f"Unknown ppo.grad_clip_mode={grad_clip_mode}. "
             "Expected 'combined' or 'separate'."
         )
-    ######################################
 
     # ALGO Logic: Storage setup
     obs = torch.zeros((ppo_cfg['num_steps'], B, N, d), dtype=next_obs.dtype, device=device)
@@ -408,8 +402,7 @@ if __name__ == "__main__":
                 critic_grad_pre = grad_l2_norm(agent.critic.parameters())
                 total_grad_pre = (actor_grad_pre ** 2 + critic_grad_pre ** 2) ** 0.5
 
-                #nn.utils.clip_grad_norm_(agent.parameters(), ppo_cfg['max_grad_norm'])
-                ####### DEBUG FOR CONVERGENCE #######
+
                 if grad_clip_mode == "combined":
                     nn.utils.clip_grad_norm_(
                         agent.parameters(),
@@ -424,7 +417,6 @@ if __name__ == "__main__":
                         agent.critic.parameters(),
                         ppo_cfg["max_grad_norm"],
                     )
-                ######################################
 
                 actor_grad_post = grad_l2_norm(agent.actor.parameters())
                 critic_grad_post = grad_l2_norm(agent.critic.parameters())
