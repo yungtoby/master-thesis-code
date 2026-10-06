@@ -56,6 +56,11 @@ class YAHPOLCBenchProblemFamily(BaseProblemFamily):
 
         self._bench_cache = {}
         self._bounds = None
+        # Owned RNGs: a lane reset must advance these streams, not reseed from
+        # operating-system entropy. Instance selection and config sampling use
+        # separate streams so neither consumes the other's random draws.
+        self._instance_rng = None
+        self._config_rng = None
 
         # Initialize bounds from the first instance
         self._init_bounds(self.instances[0])
@@ -63,7 +68,14 @@ class YAHPOLCBenchProblemFamily(BaseProblemFamily):
 
 
     def build_candidate_cache(self, B, n_candidates, seed=None):
-        rng = random.Random(seed)
+        """Build a cache; an explicit seed restarts, None continues the stream."""
+        if seed is not None or self._instance_rng is None:
+            # Direct callers may omit the first seed: then use the global Python
+            # RNG, which seed_everything controls, rather than Random(None).
+            initial_seed = int(seed) if seed is not None else random.getrandbits(64)
+            root_rng = random.Random(initial_seed)
+            self._instance_rng = random.Random(root_rng.getrandbits(64))
+            self._config_rng = random.Random(root_rng.getrandbits(64))
 
         X = t.empty(
             (B, n_candidates, len(self.feature_keys)),
@@ -74,7 +86,7 @@ class YAHPOLCBenchProblemFamily(BaseProblemFamily):
         costs = t.empty((B, n_candidates), device=self.device, dtype=self.dtype)
 
         # Sample one benchmark instance per lane.
-        instances = [rng.choice(self.instances) for _ in range(B)]
+        instances = [self._instance_rng.choice(self.instances) for _ in range(B)]
 
         # Group lane indices by instance.
         lanes_by_instance = defaultdict(list)
@@ -181,6 +193,10 @@ class YAHPOLCBenchProblemFamily(BaseProblemFamily):
     def _sample_configs(self, instance: str, n_candidates: int) -> list[dict]:
         b = self._get_benchmark(instance)
         cs = b.get_opt_space(drop_fidelity_params=True)
+
+        # ConfigSpace owns a NumPy RNG; np.random.seed alone does not seed it.
+        # Use a fresh reproducible seed on every draw, including lane resets.
+        cs.seed(self._config_rng.getrandbits(32))
 
         configs = cs.sample_configuration(n_candidates)
 

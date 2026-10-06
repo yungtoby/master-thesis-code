@@ -12,6 +12,7 @@ def parse_args():
     parser.add_argument("--instances", nargs="+", required=True)
     parser.add_argument("--samples-per-instance", type=int, default=1000)
     parser.add_argument("--epoch", type=int, default=51)
+    parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--output", type=str, default="results/yahpo_cost_samples.csv")
     return parser.parse_args()
 
@@ -26,6 +27,10 @@ def main():
 
         b = BenchmarkSet("lcbench", instance=str(instance))
         cs = b.get_opt_space(drop_fidelity_params=True)
+        # LCBench instance IDs are numeric. This mapping is stable across
+        # processes and does not depend on the order of --instances.
+        instance_seed = (args.seed * 1_000_003 + int(instance)) % (2**32)
+        cs.seed(instance_seed)
 
         configs = cs.sample_configuration(args.samples_per_instance)
         if args.samples_per_instance == 1:
