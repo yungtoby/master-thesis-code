@@ -1,0 +1,42 @@
+{
+  "calibration_config": "configs/pilots_and_audits/debug/debug_cost_mean_longrun_1m_new_critic.json",
+  "calibration_seed": 1,
+  "episodes_per_instance": 128,
+  "settings": {
+    "n_candidates": 64,
+    "n_init": 3,
+    "epoch": 51,
+    "cost_key": "time",
+    "mask_visited_actions": false
+  },
+  "calibration_rule": "pooled_median_cumulative_cost_at_target",
+  "random_action_layout": "step_major_v1",
+  "caps": [
+    29,
+    45,
+    61
+  ],
+  "budgets": [
+    {
+      "level": "low",
+      "target_total_evaluations": 10,
+      "target_acquisitions": 7,
+      "budget": 1090.0049419403076,
+      "median_cost_at_target": 1090.0049419403076
+    },
+    {
+      "level": "medium",
+      "target_total_evaluations": 20,
+      "target_acquisitions": 17,
+      "budget": 2710.8908500671387,
+      "median_cost_at_target": 2710.8908500671387
+    },
+    {
+      "level": "high",
+      "target_total_evaluations": 30,
+      "target_acquisitions": 27,
+      "budget": 4322.566970825195,
+      "median_cost_at_target": 4322.566970825195
+    }
+  ]
+}
