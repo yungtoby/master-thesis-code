@@ -1,0 +1,15 @@
+{
+  "base_config": "configs/pilots_and_audits/debug/debug_cost_mean_test8_scaled_new_critic.json",
+  "budgets_file": "results/budget_calibration_median/train20_caps_fit.budgets.json",
+  "episode_bank": "results/gp_selection/paired_validation_episodes.npz",
+  "device": "cuda",
+  "seed": 1,
+  "episodes_per_instance": 32,
+  "batch_size": 32,
+  "max_acquisitions": 61,
+  "training_iter": 10,
+  "kernels": ["rbf", "matern32", "matern52", "rbf_matern52_add", "rbf_matern52_mul"],
+  "means": ["constant", "linear"],
+  "learning_rates": [0.001, 0.01, 0.1],
+  "bootstrap_replicates": 2000
+}

@@ -60,7 +60,10 @@ def fit_budgets(scenarios, targets, n_init):
     fitted = []
     for label, total in zip(labels, targets):
         k = total - n_init
+        
+        # MAIN CALC: Choose the k-th acquisition, and take the median value 
         at_target = float(np.median(cumulative[:, k - 1]))
+
         if not np.isfinite(at_target) or at_target <= 0:
             raise ValueError(f"Median cumulative cost must be finite and positive for target {total}.")
         fitted.append({
@@ -137,60 +140,82 @@ def summarize(data, costs, instance, target, cap, seed, config_path):
 
 
 def main():
+    # Retrieve args:
     args = parse_args()
     with Path(args.config).open(encoding="utf-8") as f:
         cfg = json.load(f)
+
+    # Get problem family and env config
     problem = cfg["problem_family"]
     env = cfg["env"]
+
+    # Quick check to check for problem type
     if problem["type"] != "yahpo_lcbench":
         raise ValueError("This calibration requires a YAHPO LCBench config.")
+    
     if env["mask_visited_actions"]:
         raise ValueError("This calibration matches mask_visited_actions=false only.")
+    
     instances = [str(x) for x in problem["instances"]]
     if not instances or len(set(instances)) != len(instances):
         raise ValueError("The config must contain distinct, nonempty instance IDs.")
+    
     n_candidates, n_init = env["n_candidates"], env["n_init"]
     if not 1 <= n_init <= n_candidates:
         raise ValueError("Require 1 <= n_init <= n_candidates.")
+    
     half_limit = n_candidates // 2
     if half_limit <= n_init:
         raise ValueError("Warm start leaves no acquisition below the median target limit.")
 
+    # Set the settings
     settings = {
         "n_candidates": n_candidates, "n_init": n_init,
         "epoch": int(problem.get("epoch", 51)),
         "cost_key": problem.get("cost_key", "time"),
         "mask_visited_actions": False,
     }
+
+    # If no budget file, Sort targets, cannot be smaller than init or larger than half of the candidate set
     if args.budget_file is None:
         targets = sorted(set(args.target_total_evals))
         if any(not n_init < t <= half_limit for t in targets):
             raise ValueError(f"Total-evaluation targets must be in [{n_init + 1}, {half_limit}].")
         fitted = None
+
+    # If budget file, open the file and set corresponding specifications
     else:
         with args.budget_file.open(encoding="utf-8") as f:
             spec = json.load(f)
+
         if spec.get("calibration_rule") != CALIBRATION_RULE:
             raise ValueError(
                 "This budget file uses a previous calibration rule. Refit with "
                 "--target-total-evals 10 20 30 and save a new budget file."
             )
+        
         if spec["settings"] != settings:
             raise ValueError("Candidate count, warm start, fidelity, cost key, or masking differs from the budget file.")
+        
         fitted = spec["budgets"]
         targets = [int(t["target_total_evaluations"]) for t in fitted]
+
         if not targets or any(not n_init < t <= half_limit for t in targets):
             raise ValueError("Budget-file targets violate the half-candidate median target limit.")
+        
         if any(not np.isfinite(t["budget"]) or t["budget"] <= 0 for t in fitted):
             raise ValueError("Budget-file values must be finite and positive.")
+        
     if args.caps is None:
         args.caps = DEFAULT_CAPS.copy()
+
     max_allowed_cap = min(64, n_candidates)
     if any(cap > max_allowed_cap for cap in args.caps):
         raise ValueError(
             f"Acquisition caps must not exceed {max_allowed_cap} "
             "(the smaller of 64 and n_candidates)."
         )
+    
     path_length = max(max(args.caps), max(targets) - n_init)
 
     # Keep imports here so --help and the pure NumPy stopping calculation do
@@ -200,7 +225,7 @@ def main():
 
     n_episodes = args.episodes_per_instance
     scenarios = []
-    print("calibrate_yahpo_budgets_new.py: direct pooled median cumulative-cost rule.")
+    print("calibrate_yahpo_budgets_median.py: direct pooled median cumulative-cost rule.")
     print(f"Sampling {n_episodes} grids of {n_candidates} candidates per instance.")
     print("Costs exclude initialization; final crossing is included; actions may repeat.")
     print(f"Budget reference totals: {targets}; acquisition caps: {args.caps}.")
@@ -208,7 +233,11 @@ def main():
     print(f"Reference totals are at most half the candidate count ({half_limit}).")
     print(f"Individual episodes may reach acquisition cap + {n_init} warm-start evaluations.")
 
+    # For each instance, create reproducible seed streams,
+    # initiate problem family, costs and actions using the 
+    # seed streams.
     for instance in instances:
+
         print(f"  Instance {instance}", flush=True)
         # Stable per-instance streams; unrelated instances and budget loops
         # cannot change these candidates, actions, or initial designs.
@@ -216,28 +245,37 @@ def main():
         cache_seed = int(streams[0].generate_state(1)[0])
         action_rng = np.random.default_rng(streams[1])
         init_rng = np.random.default_rng(streams[2])
+
+
         family_kwargs = {k: v for k, v in problem.items() if k not in {"type", "instances"}}
         family = YAHPOLCBenchProblemFamily(
             device=torch.device("cpu"), dtype=torch.float32,
             instances=[instance], **family_kwargs,
         )
+
         _, _, cost_tensor, _ = family.build_candidate_cache(
             B=n_episodes, n_candidates=n_candidates, seed=cache_seed,
         )
         costs = cost_tensor.cpu().numpy()
+
         if costs.shape != (n_episodes, n_candidates):
             raise RuntimeError(f"Unexpected cost shape: {costs.shape}")
+        
         if not np.isfinite(costs).all() or (costs < 0).any():
             raise RuntimeError("Costs must be finite and non-negative.")
+        
         actions = draw_random_actions(action_rng, n_episodes, n_candidates, path_length)
+
         # Uniform distinct initialization per episode. BO_env shares an index
         # draw across lanes; the per-episode marginal distribution is the same.
         initial_indices = np.argsort(init_rng.random((n_episodes, n_candidates)), axis=1)[:, :n_init]
         scenarios.append((instance, costs, actions, initial_indices))
 
+
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)
     if fitted is None:
+        # Retrieve the budgets if not already calculated
         fitted = fit_budgets(scenarios, targets, n_init)
         spec = {
             "calibration_config": str(args.config), "calibration_seed": args.seed,
@@ -249,12 +287,17 @@ def main():
         budget_path = output.with_suffix(".budgets.json")
         budget_path.write_text(json.dumps(spec, indent=2) + "\n", encoding="utf-8")
         print(f"\nSaved fitted budgets to {budget_path}")
+
     else:
         print(f"\nChecking fixed budgets from {args.budget_file}; no refitting.")
+
     print(pd.DataFrame(fitted)[[
         "level", "target_total_evaluations", "target_acquisitions", "budget",
     ]].to_string(index=False, float_format=lambda x: f"{x:.4f}"))
 
+    ####################
+    # SIMULATE OUTCOME #
+    ####################
     per_instance = []
     pooled = {(target["level"], c): [] for target in fitted for c in args.caps}
     for instance, costs, actions, initial_indices in scenarios:

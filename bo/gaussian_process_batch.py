@@ -30,7 +30,8 @@ class RepeatedPadGPWrapper:
     Keep batched buffers with valid-prefix bookkeeping, but rebuild a fresh
     batched GP from repeated real observations when predictions are needed.
     """
-    def __init__(self, device, dtype, B, T_max, d, lr=1e-3, training_iter=10, kernel='rbf'):
+    def __init__(self, device, dtype, B, T_max, d, lr=1e-3, training_iter=10,
+                 kernel='rbf', mean='constant', record_diagnostics=False):
         self.device = t.device(device)
         self.dtype = dtype
         self.B = B
@@ -39,6 +40,10 @@ class RepeatedPadGPWrapper:
         self.lr = lr
         self.training_iter = training_iter
         self.kernel = kernel
+        self.mean = mean
+        self.record_diagnostics = record_diagnostics
+        self.last_fit_parameters = {}
+        self.last_prediction = None
 
         # storage only
         self.train_x = t.zeros((B, T_max, d), device=self.device, dtype=self.dtype)
@@ -89,25 +94,74 @@ class RepeatedPadGPWrapper:
         self.t_idx[lanes] += 1
 
     
-    def _make_base_kernel(self, batch_shape):
-        if self.kernel == 'rbf':
+    def _make_base_kernel(self, batch_shape, name=None):
+        name = self.kernel if name is None else name
+        if name == 'rbf':
             return gpy.kernels.RBFKernel(
                 batch_shape=batch_shape,
                 ard_num_dims=self.d
             )
-        if self.kernel == 'matern32':
+        if name == 'matern32':
             return gpy.kernels.MaternKernel(
                 nu=1.5,
                 batch_shape=batch_shape,
                 ard_num_dims=self.d
             )
-        if self.kernel == 'matern52':
+        if name == 'matern52':
             return gpy.kernels.MaternKernel(
                 nu=2.5,
                 batch_shape=batch_shape,
                 ard_num_dims=self.d
             )
-        raise ValueError(f"Unknown GP kernel choice: {self.kernel}")
+        raise ValueError(f"Unknown GP kernel choice: {name}")
+
+
+    def _make_covar_module(self, batch_shape):
+        def scaled(kernel):
+            return gpy.kernels.ScaleKernel(kernel, batch_shape=batch_shape)
+
+        if self.kernel in {'rbf_matern52_add', 'rbf_matern52_mul'}:
+            rbf = self._make_base_kernel(batch_shape, 'rbf')
+            matern = self._make_base_kernel(batch_shape, 'matern52')
+            if self.kernel == 'rbf_matern52_add':
+                # Each component has its own amplitude and ARD length scales.
+                return scaled(rbf) + scaled(matern)
+            # One overall amplitude avoids redundant product amplitudes.
+            return scaled(rbf * matern)
+        return scaled(self._make_base_kernel(batch_shape))
+
+    def _make_mean_module(self, batch_shape):
+        if self.mean == 'constant':
+            return gpy.means.ConstantMean(batch_shape=batch_shape)
+        if self.mean == 'linear':
+            # LinearMean normally draws random initial weights. Start both
+            # candidate means at zero, without consuming the caller's RNG.
+            with t.random.fork_rng(devices=[]):
+                mean = gpy.means.LinearMean(self.d, batch_shape=batch_shape, bias=True)
+            with t.no_grad():
+                mean.weights.zero_()
+                mean.bias.zero_()
+            return mean
+        raise ValueError(f"Unknown GP mean choice: {self.mean}")
+
+
+    def _record_fit_parameters(self, gp, likelihood):
+        parameters = {'likelihood.noise': likelihood.noise}
+        for name, module in gp.covar_module.named_modules():
+            prefix = f'covar.{name}' if name else 'covar'
+            if getattr(module, 'has_lengthscale', False):
+                parameters[f'{prefix}.lengthscale'] = module.lengthscale
+            if isinstance(module, gpy.kernels.ScaleKernel):
+                parameters[f'{prefix}.outputscale'] = module.outputscale
+        if self.mean == 'constant':
+            parameters['mean.constant'] = gp.mean_module.constant
+        else:
+            parameters['mean.weights'] = gp.mean_module.weights
+            parameters['mean.bias'] = gp.mean_module.bias
+        self.last_fit_parameters = {
+            key: value.detach().reshape(self.B, -1).clone()
+            for key, value in parameters.items()
+        }
 
 
     def _repeat_pad_prefixes(self):
@@ -155,15 +209,10 @@ class RepeatedPadGPWrapper:
 
         likelihood = gpy.likelihoods.GaussianLikelihood(
             batch_shape=batch_shape
-        ).to(self.device)
+        ).to(device=self.device, dtype=self.dtype)
 
-        mean_module = gpy.means.ConstantMean(batch_shape=batch_shape)
-
-        base_kernel = self._make_base_kernel(batch_shape)
-        covar_module = gpy.kernels.ScaleKernel(
-            base_kernel=base_kernel,
-            batch_shape=batch_shape
-        )
+        mean_module = self._make_mean_module(batch_shape)
+        covar_module = self._make_covar_module(batch_shape)
 
         gp = GaussianProcess(
             train_x=train_x,
@@ -171,7 +220,7 @@ class RepeatedPadGPWrapper:
             likelihood=likelihood,
             mean_module=mean_module,
             covar_module=covar_module,
-        ).to(self.device)
+        ).to(device=self.device, dtype=self.dtype)
 
         likelihood.noise_covar.register_constraint("raw_noise", gpy.constraints.GreaterThan(1e-4)) # FOR NUMERICAL STABILITY.
         optimizer = t.optim.Adam(gp.parameters(), lr=self.lr)
@@ -192,6 +241,8 @@ class RepeatedPadGPWrapper:
             t.nn.utils.clip_grad_norm_(gp.parameters(), max_norm=10.0) # FOR NUMERICAL STABILITY.
             optimizer.step()
 
+        if self.record_diagnostics:
+            self._record_fit_parameters(gp, likelihood)
         return gp, likelihood
 
 
@@ -209,7 +260,10 @@ class RepeatedPadGPWrapper:
         likelihood.eval()
 
         with t.no_grad(), gpy.settings.fast_pred_var():
-            return likelihood(gp(x))
+            prediction = likelihood(gp(x))
+        if self.record_diagnostics:
+            self.last_prediction = prediction
+        return prediction
 
         #with t.no_grad(), gpy.settings.fast_pred_var():
         #    posterior = gp(x)  # latent posterior

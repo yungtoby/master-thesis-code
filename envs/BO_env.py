@@ -42,6 +42,8 @@ class BatchedBOEnv():
         self.problem_family_cfg = problem_family_cfg
         self.gp_cfg = gp_cfg
         self.cost_model_cfg = cost_model_cfg or {'type':'known'}
+        # Older configs continue to use the same settings for both GPs.
+        self.cost_gp_cfg = {**self.gp_cfg, **self.cost_model_cfg.get('gp', {})}
         self.use_cost_gp = self.cost_model_cfg.get('type', 'known') == 'gp'
         self.cost_feature_mode = cost_feature_mode
         self.mask_visited_actions = mask_visited_actions
@@ -83,20 +85,37 @@ class BatchedBOEnv():
 
 
 
-    def reset(self, seed, deterministic):
+    def reset(self, seed, deterministic, *, candidate_cache=None,
+              init_indices=None, observation_noise=None, auto_reset=True):
         '''Reset the environment'''
+        # Explicit episode data are used by paired validation only. Ordinary
+        # PPO/evaluation calls retain their original reset and RNG behavior.
+        self.auto_reset = bool(auto_reset)
+        self._fixed_init_indices = init_indices
+        self._fixed_observation_noise = observation_noise
+        self._noise_cursor = 0
+        if any(x is not None for x in (candidate_cache, init_indices, observation_noise)) and self.auto_reset:
+            raise ValueError('Fixed episode data require auto_reset=False.')
+        if init_indices is not None and init_indices.shape != (self.num_batches, self.n_init):
+            raise ValueError('init_indices must have shape [num_batches, n_init].')
+        if observation_noise is not None and observation_noise.shape != (self.num_batches, self.T_max):
+            raise ValueError('observation_noise must have shape [num_batches, n_init + max_acquisitions].')
         # Set seed
         t.manual_seed(seed)
         t.backends.cudnn.deterministic = deterministic
 
         # Initialize problem family
-        self.problem_family = build_problem_family(
+        self.problem_family = None if candidate_cache is not None else build_problem_family(
             self.problem_family_cfg,
             device=self.device,
             dtype=self.dtype
         )
 
-        if getattr(self.problem_family, 'provides_candidate_cache', False):
+        if candidate_cache is not None:
+            self.candidate_set = None
+            self.X, self.y_grid, self.costs, self.params = candidate_cache
+
+        elif getattr(self.problem_family, 'provides_candidate_cache', False):
             self.candidate_set = None
             self.X, self.y_grid, self.costs, self.params = (
                 self.problem_family.build_candidate_cache(
@@ -150,6 +169,8 @@ class BatchedBOEnv():
             lr=self.gp_cfg.get('lr', 1e-3),
             training_iter=self.gp_cfg.get('training_iter', 10),
             kernel=self.gp_cfg.get('kernel', 'rbf'),
+            mean=self.gp_cfg.get('mean', 'constant'),
+            record_diagnostics=self.gp_cfg.get('record_diagnostics', False),
         )
 
         # If cost gp, then initialize cost gp
@@ -160,9 +181,11 @@ class BatchedBOEnv():
                 B=self.num_batches,
                 T_max=self.T_max,
                 d=d,
-                lr=self.gp_cfg.get('lr', 1e-3),
-                training_iter=self.gp_cfg.get('training_iter', 10),
-                kernel=self.gp_cfg.get('kernel', 'rbf'),
+                lr=self.cost_gp_cfg.get('lr', 1e-3),
+                training_iter=self.cost_gp_cfg.get('training_iter', 10),
+                kernel=self.cost_gp_cfg.get('kernel', 'rbf'),
+                mean=self.cost_gp_cfg.get('mean', 'constant'),
+                record_diagnostics=self.cost_gp_cfg.get('record_diagnostics', False),
             )
 
         # Initialize initial points for each lane in the batch
@@ -221,6 +244,14 @@ class BatchedBOEnv():
         # Saftery in case it is called with 0 mask
         if lanes.numel() == 0:
             return train_x, train_y, train_cost, train_idx
+
+        if self._fixed_init_indices is not None:
+            idx = self._fixed_init_indices
+            batch_idx = t.arange(B, device=self.device).unsqueeze(1)
+            train_x = self.X[batch_idx, idx]
+            train_y = self._observe_y(self.y_grid[batch_idx, idx])
+            train_cost = self.costs[batch_idx, idx]
+            return train_x, train_y, train_cost, idx
 
         # Choose init indices (shared across lanes for simplicity)
         idx = t.randperm(N, device=self.device)[: self.n_init]  # [n_init]
@@ -401,7 +432,12 @@ class BatchedBOEnv():
                 }
 
             info['final_info'] = final_info
-            self._reset_lanes(terminal)
+            if self.auto_reset:
+                self._reset_lanes(terminal)
+
+        if not self.auto_reset and self.done.all():
+            # No subsequent action needs a prediction after the batch ends.
+            return self.last_obs, reward, terminal, info
 
         obs = self._build_obs(*self._gp_predict_on_candidates())
         self.last_obs = obs
@@ -439,7 +475,16 @@ class BatchedBOEnv():
         if self.objective_noise_std <= 0.0:
             return y_mean
 
-        noise = t.randn_like(y_mean) * self.objective_noise_std
+        if self._fixed_observation_noise is None:
+            noise = t.randn_like(y_mean)
+        else:
+            count = y_mean.shape[1] if y_mean.ndim == 2 else 1
+            noise = self._fixed_observation_noise[:, self._noise_cursor:self._noise_cursor + count]
+            if noise.numel() != y_mean.numel():
+                raise RuntimeError('Paired observation-noise schedule exhausted.')
+            noise = noise.reshape_as(y_mean)
+            self._noise_cursor += count
+        noise = noise * self.objective_noise_std
         y_obs = y_mean + noise
 
         if self.objective_noise_clip:
