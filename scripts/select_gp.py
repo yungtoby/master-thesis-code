@@ -1,4 +1,4 @@
-"""Phase 2: paired EI objective-GP selection, then paired EIpu cost-GP selection.
+"""Phase 2.1: paired EI objective-GP selection, then paired EIpu cost-GP selection.
 
 Run from the repository root. Each candidate has the same fitting budget (10
 Adam steps per fit). The frozen budgets come directly from Phase 1's JSON.
@@ -28,7 +28,7 @@ from utils.config import load_config
 from utils.seeding import seed_everything
 
 
-# Kernels to try and episode fields
+# Supported kernel names; the JSON config chooses which ones to evaluate.
 KERNELS = ('rbf', 'matern32', 'matern52', 'rbf_matern52_add', 'rbf_matern52_mul')
 EPISODE_FIELDS = [
     'setting', 'stage', 'method', 'kernel', 'mean', 'lr', 'instance',
@@ -50,7 +50,7 @@ def setting_id(setting):
     return f"{setting['kernel']}__{setting['mean']}__lr{setting['lr']:g}"
 
 
-# Return a dict of candidate settings to choose utilizing itertools.prod
+# Return one settings dictionary per configured kernel/mean/learning-rate combination.
 def candidate_settings(phase):
     return [
         dict(kernel=k, mean=m, lr=float(lr), training_iter=10)
@@ -263,16 +263,33 @@ def run_batch(env, cache, init, noise, seed, method):
 
 
 def paired_interval(values, indices):
-    """Paired instance-cluster bootstrap, retaining complete episodes/budgets.
+    """Percentile bootstrap over whole instances, retaining their budgets/episodes.
+
+    values has shape [budgets, instances, episodes]. It contains either final
+    regrets or matched regret differences (competitor minus selected setting).
+    indices has shape [bootstrap repetitions, instances]; each row samples
+    instance indices with replacement. Pairing is established by the matched
+    differences before this function is called.
 
     GP fitting clips gradients across a batch, so episodes in one batch are
     not strictly independent. Keep each instance's entire evaluation intact.
     """
+    # Average axes 0 (budgets) and 2 (episodes), leaving one mean per instance.
     by_instance = values.mean(axis=(0, 2))
-    return np.quantile(by_instance[indices].mean(axis=1), [0.025, 0.975]).tolist()
+    # Duplicate indices repeat a whole instance's mean; no BO runs are repeated.
+    resampled_instance_means = by_instance[indices]
+    bootstrap_means = resampled_instance_means.mean(axis=1)
+    return np.quantile(bootstrap_means, [0.025, 0.975]).tolist()
 
 
 def regret_cube(rows, budgets, instances, episodes):
+    """Return one setting's final regrets as [budget, instance, episode].
+
+    For 3 budgets, 8 instances, and 32 episodes, the result is a NumPy array
+    of shape (3, 8, 32). Each cell is one completed episode's final regret,
+    not an intermediate BO step. The temporary dictionary below aligns rows
+    by their labels; it is not itself the cube.
+    """
     lookup = {(r['budget_level'], str(r['instance']), r['episode_id']): r['regret'] for r in rows}
     if len(lookup) != len(rows):
         raise ValueError('Duplicate paired episode keys.')
@@ -287,10 +304,12 @@ def summarize(all_rows, settings, failed, budgets, instances, phase):
     for row in all_rows:
         grouped[row['setting']].append(row)
     expected = len(budgets) * len(instances) * phase['episodes_per_instance']
+    # This dictionary maps each GP-setting ID to its own three-dimensional array.
     cubes = {
         key: regret_cube(rows, budgets, instances, phase['episodes_per_instance'])
         for key, rows in grouped.items() if key not in failed and len(rows) == expected
     }
+    # Choose the winner from the original results, before any resampling.
     winner = min(cubes, key=lambda key: (float(cubes[key].mean()), key)) if cubes else None
     rng = np.random.default_rng(phase['seed'])
     indices = rng.integers(0, len(instances), size=(phase['bootstrap_replicates'], len(instances)))
@@ -342,7 +361,7 @@ def write_csv(path, rows, fieldnames=None):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--phase-config', default='configs/gp_selection/phase2.json')
+    parser.add_argument('--phase-config', default='configs/gp_hyperparameter_selection/gp_configs.json')
     parser.add_argument('--stage', choices=('objective', 'cost'), required=True)
     parser.add_argument('--objective-selection', help='Objective-stage selected.json; required for the cost stage.')
     parser.add_argument('--output-dir', help='Default: results/gp_selection/<stage>')
@@ -408,7 +427,7 @@ def main():
                             all_rows.extend(rows)
                         print(f'  {budget["level"]} / {instance}: {phase["episodes_per_instance"]} episodes', flush=True)
             except t.cuda.OutOfMemoryError:
-                raise RuntimeError('CUDA out of memory. Reduce phase2.json batch_size and rerun BOTH stages in new output directories.') from None
+                raise RuntimeError('CUDA out of memory. Reduce batch_size in the phase config and rerun BOTH stages in new output directories.') from None
             except RuntimeError as error:
                 # A failed setting cannot win by dropping its difficult episodes.
                 failed.add(key)

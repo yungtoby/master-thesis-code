@@ -9,7 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import torch as t
 
-from scripts.select_gp import KERNELS, configured_env, load_protocol, run_batch
+from scripts.select_gp import configured_env, load_protocol, run_batch
 
 
 def main():
@@ -19,8 +19,8 @@ def main():
     if args.device == 'cuda' and not t.cuda.is_available():
         raise RuntimeError('CUDA requested but unavailable.')
     device = t.device(args.device)
-    _, cfg, _, _, settings = load_protocol('configs/gp_hyperparameter_selection/gp_configs.json')
-    assert len(settings) == 30
+    phase, cfg, _, _, settings = load_protocol('configs/gp_hyperparameter_selection/gp_configs.json')
+    assert len(settings) == 24, 'Expected the approved 4 kernels x 2 means x 3 learning rates.'
     cfg['env'].update(n_candidates=8, n_init=3, mask_visited_actions=False)
     t.manual_seed(42)
     X = t.rand((2, 8, 7), device=device)
@@ -33,8 +33,8 @@ def main():
     expected_warm = (y[t.arange(2, device=device)[:, None], init] + noise[:, :3] * 0.01).clamp(0, 1)
     cfg['env']['objective_noise_std'] = 0.01
     cfg['env']['objective_noise_clip'] = True
-    for kernel in KERNELS:
-        for mean in ('constant', 'linear'):
+    for kernel in phase['kernels']:
+        for mean in phase['means']:
             objective_gp = dict(kernel=kernel, mean=mean, lr=0.01, training_iter=10)
             cost_gp = {**objective_gp, 'lr': 0.1}
             env = configured_env(cfg, 'cost', cost_gp, objective_gp, 2, 2.5, 3, device)
@@ -54,7 +54,8 @@ def main():
     ei_env = configured_env(cfg, 'objective', objective_gp, None, 2, 2.5, 3, device)
     ei_rows = run_batch(ei_env, cache, init, noise, 1, 'ei')
     assert [r['episode_length'] for r in ei_rows] == [3, 2]
-    print('PASS: 10 kernel/mean combinations; finite [2, 8] GP predictions; separate GP learning rates.')
+    combinations = len(phase['kernels']) * len(phase['means'])
+    print(f'PASS: {combinations} kernel/mean combinations; finite [2, 8] GP predictions; separate GP learning rates.')
     print('PASS: identical paired warm starts/noise; repeated EIpu run matches; EI/EIpu lengths [3, 2].')
     print(f'Device: {device}. GP fitting iterations: 10. No YAHPO data loaded.')
 

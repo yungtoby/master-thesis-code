@@ -8,7 +8,7 @@
   "batch_size": 32,
   "max_acquisitions": 61,
   "training_iter": 10,
-  "kernels": ["rbf", "matern32", "matern52", "rbf_matern52_add", "rbf_matern52_mul"],
+  "kernels": ["rbf", "matern52", "rbf_matern52_add", "rbf_matern52_mul"],
   "means": ["constant", "linear"],
   "learning_rates": [0.001, 0.01, 0.1],
   "bootstrap_replicates": 2000
