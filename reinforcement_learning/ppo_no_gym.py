@@ -18,6 +18,8 @@ import os
 import time
 import numpy as np
 import argparse
+import hashlib
+import json
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -39,7 +41,19 @@ def parse_args():
         default="configs/toy_rbf_debug.json",
         help="Path to experiment config JSON.",
     )
+    parser.add_argument("--report", help="Write a completed-run JSON with timings and checkpoint paths.")
+    parser.add_argument("--require-cuda", action="store_true", help="Fail instead of falling back to CPU.")
     return parser.parse_args()
+
+
+def checkpoint_record(path, step, kind):
+    return dict(path=path.as_posix(), step=step, kind=kind,
+                sha256=hashlib.sha256(path.read_bytes()).hexdigest())
+
+
+def synchronize_for_timing(device, enabled):
+    if enabled and device.type == "cuda":
+        torch.cuda.synchronize(device)
 
 # Function to format seconds to hours, min and sec
 def format_duration(seconds):
@@ -156,6 +170,10 @@ def make_env(cfg, device):
 if __name__ == "__main__":
     # Parse arguments given to CLI and load corresponding config
     cli_args = parse_args()
+    report_start = time.perf_counter()
+    report_path = Path(cli_args.report) if cli_args.report else None
+    if report_path is not None and report_path.exists():
+        raise FileExistsError(f"Completed-run report already exists: {report_path}")
     cfg = load_config(cli_args.config)
 
     # Divide config into different parts PPO, Experiment, etc etc
@@ -173,6 +191,8 @@ if __name__ == "__main__":
     device = torch.device(
         "cuda" if torch.cuda.is_available() and exp_cfg["cuda"] else "cpu"
     )
+    if cli_args.require_cuda and device.type != "cuda":
+        raise RuntimeError("CUDA is required for this run, but is unavailable or disabled.")
     print(f"Using device {device}")
 
     # Create experiment name
@@ -180,7 +200,7 @@ if __name__ == "__main__":
         f"{exp_cfg['env_id']}__"
         f"{exp_cfg['name']}__"
         f"{exp_cfg['seed']}__"
-        f"{int(time.time())}"
+        f"{time.time_ns()}"
     )
 
     # Save run to its directory and save config for run
@@ -240,8 +260,13 @@ if __name__ == "__main__":
     print(f"Checkpoint directory: {checkpoint_dir}")
 
     last_saved_step = -1
+    iteration_seconds = []
+    checkpoint_records = []
+    synchronize_for_timing(device, report_path is not None)
+    setup_seconds = time.perf_counter() - report_start
 
     for iteration in range(1, ppo_cfg['num_iterations'] + 1):
+        iteration_start = time.perf_counter()
         rollout_episode_returns = []
         rollout_episode_lengths = []
         rollout_regrets = []
@@ -574,13 +599,40 @@ if __name__ == "__main__":
             ckpt_path = checkpoint_dir / f"model_step_{global_step}.pt"
             torch.save(agent.state_dict(), ckpt_path)
             print(f"Saved checkpoint: {ckpt_path}")
+            if report_path is not None:
+                checkpoint_records.append(checkpoint_record(ckpt_path, global_step, "periodic"))
 
             last_saved_step = global_step
             next_save_step += save_every
-        
+        synchronize_for_timing(device, report_path is not None)
+        iteration_seconds.append(time.perf_counter() - iteration_start)
 
+    finalize_start = time.perf_counter()
     final_ckpt_path = checkpoint_dir / f"model_final_step_{global_step}.pt"
+    final_save_start = time.perf_counter()
     torch.save(agent.state_dict(), final_ckpt_path)
+    final_save_seconds = time.perf_counter() - final_save_start
     print(f"Saved final checkpoint: {final_ckpt_path}")
 
     writer.close()
+    if report_path is not None:
+        checkpoint_records.append(checkpoint_record(final_ckpt_path, global_step, "final"))
+        report = dict(
+            status="complete", config_path=Path(cli_args.config).as_posix(),
+            config_sha256=hashlib.sha256(Path(cli_args.config).read_bytes()).hexdigest(),
+            run_name=run_name, run_dir=run_dir.as_posix(),
+            checkpoint_dir=checkpoint_dir.as_posix(), device=str(device),
+            device_name=torch.cuda.get_device_name(device) if device.type == "cuda" else "cpu",
+            torch_version=str(torch.__version__), cuda_version=torch.version.cuda,
+            global_step=global_step, iterations=ppo_cfg["num_iterations"],
+            setup_seconds=setup_seconds, iteration_seconds=iteration_seconds,
+            final_save_seconds=final_save_seconds,
+            finalize_seconds=time.perf_counter() - finalize_start,
+            total_seconds=time.perf_counter() - report_start,
+            checkpoints=checkpoint_records,
+        )
+        report_path.parent.mkdir(parents=True, exist_ok=True)
+        temporary = report_path.with_suffix(report_path.suffix + ".tmp")
+        temporary.write_text(json.dumps(report, indent=2, allow_nan=False) + "\n", encoding="utf-8")
+        temporary.replace(report_path)
+        print(f"Completed-run report: {report_path}")
