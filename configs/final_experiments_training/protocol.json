@@ -1,0 +1,452 @@
+{
+  "version": 1,
+  "prepared_utc": "2026-10-16T10:53:32.055478+00:00",
+  "reviewed_commit": "37ea8b80ed05d93105603abe18e1d7dedd7e0af4",
+  "results_root": "results/final_training",
+  "splits": {
+    "train": [
+      "3945",
+      "7593",
+      "34539",
+      "126025",
+      "126026",
+      "126029",
+      "146212",
+      "167104",
+      "167149",
+      "167152",
+      "167161",
+      "167168",
+      "167181",
+      "167184",
+      "167185",
+      "167190",
+      "167200",
+      "167201",
+      "168329",
+      "168330"
+    ],
+    "validation": [
+      "168331",
+      "168335",
+      "168868",
+      "168908",
+      "168910",
+      "189354",
+      "189862",
+      "189865"
+    ],
+    "test": [
+      "189866",
+      "189873",
+      "189905",
+      "189906",
+      "189908",
+      "189909"
+    ]
+  },
+  "variants": [
+    "no_cost",
+    "cost_mean",
+    "cost_uncertainty"
+  ],
+  "training_seeds": [
+    1,
+    2,
+    3
+  ],
+  "budgets": [
+    {
+      "level": "low",
+      "target_total_evaluations": 10,
+      "target_acquisitions": 7,
+      "budget": 1090.0049419403076,
+      "median_cost_at_target": 1090.0049419403076
+    },
+    {
+      "level": "medium",
+      "target_total_evaluations": 20,
+      "target_acquisitions": 17,
+      "budget": 2710.8908500671387,
+      "median_cost_at_target": 2710.8908500671387
+    },
+    {
+      "level": "high",
+      "target_total_evaluations": 30,
+      "target_acquisitions": 27,
+      "budget": 4322.566970825195,
+      "median_cost_at_target": 4322.566970825195
+    }
+  ],
+  "checkpoint_steps": [
+    262144,
+    524288,
+    786432,
+    1048576
+  ],
+  "selection_rule": "For each variant/budget/training seed, minimum unrounded mean of instance means; exact ties choose earlier step. Keep every seed.",
+  "validation": {
+    "instances": [
+      "168331",
+      "168335",
+      "168868",
+      "168908",
+      "168910",
+      "189354",
+      "189862",
+      "189865"
+    ],
+    "episodes_per_instance": 32,
+    "batch_size": 32,
+    "seed": 1,
+    "action_mode": "argmax",
+    "episode_bank": "results/gp_selection/paired_validation_episodes.npz",
+    "episode_bank_sha256": "c6a508f5802a6765b73252af2a2b48cb458610e2c4484333e16d6e579e22250f",
+    "bank_signature": {
+      "format": "phase2_step_noise_v1",
+      "seed": 1,
+      "episodes_per_instance": 32,
+      "max_acquisitions": 61,
+      "problem_family": {
+        "type": "yahpo_lcbench",
+        "instances": [
+          "168331",
+          "168335",
+          "168868",
+          "168908",
+          "168910",
+          "189354",
+          "189862",
+          "189865"
+        ],
+        "objective_key": "val_accuracy",
+        "objective_scale": 0.01,
+        "cost_key": "time",
+        "epoch": 51
+      },
+      "n_candidates": 64,
+      "n_init": 3,
+      "dtype": "float32"
+    }
+  },
+  "timing": {
+    "warmup_updates": 2,
+    "measured_updates": 4
+  },
+  "runs": [
+    {
+      "run_id": "no_cost__low__seed1",
+      "variant": "no_cost",
+      "budget_level": "low",
+      "training_seed": 1,
+      "config": "configs/final_experiments_training/train/no_cost__low__seed1.json",
+      "config_sha256": "47dab90338532abe48d08cd119c7544eca3bb02441cb834bf50c0f6874b38f7e"
+    },
+    {
+      "run_id": "no_cost__low__seed2",
+      "variant": "no_cost",
+      "budget_level": "low",
+      "training_seed": 2,
+      "config": "configs/final_experiments_training/train/no_cost__low__seed2.json",
+      "config_sha256": "69ebacb7d69d6717a38bc0107d46e192688cbe077f550d0676aefa7848516ccd"
+    },
+    {
+      "run_id": "no_cost__low__seed3",
+      "variant": "no_cost",
+      "budget_level": "low",
+      "training_seed": 3,
+      "config": "configs/final_experiments_training/train/no_cost__low__seed3.json",
+      "config_sha256": "6845df5061d3db6c5749afcf2e4cc627321968e55a68d5f7912d89763da6f0cd"
+    },
+    {
+      "run_id": "no_cost__medium__seed1",
+      "variant": "no_cost",
+      "budget_level": "medium",
+      "training_seed": 1,
+      "config": "configs/final_experiments_training/train/no_cost__medium__seed1.json",
+      "config_sha256": "83a3906d0606824084e9899a5ba2f94d3b59ae4b35bb27d5648357312e9d37ad"
+    },
+    {
+      "run_id": "no_cost__medium__seed2",
+      "variant": "no_cost",
+      "budget_level": "medium",
+      "training_seed": 2,
+      "config": "configs/final_experiments_training/train/no_cost__medium__seed2.json",
+      "config_sha256": "0038e651a35579d4a21296ad3885242679a71475457e21dc8b7b25d60edbe512"
+    },
+    {
+      "run_id": "no_cost__medium__seed3",
+      "variant": "no_cost",
+      "budget_level": "medium",
+      "training_seed": 3,
+      "config": "configs/final_experiments_training/train/no_cost__medium__seed3.json",
+      "config_sha256": "3d2562dd7c2be1226b4a96538b9ae9e31c1546b1f4f44a460e15b0a8e8938c5b"
+    },
+    {
+      "run_id": "no_cost__high__seed1",
+      "variant": "no_cost",
+      "budget_level": "high",
+      "training_seed": 1,
+      "config": "configs/final_experiments_training/train/no_cost__high__seed1.json",
+      "config_sha256": "771b9ce99846f4bc34d922be837dfe7c1e42500fcc54ff00d8d6f87ee54b328e"
+    },
+    {
+      "run_id": "no_cost__high__seed2",
+      "variant": "no_cost",
+      "budget_level": "high",
+      "training_seed": 2,
+      "config": "configs/final_experiments_training/train/no_cost__high__seed2.json",
+      "config_sha256": "877b3a9aa775016cc7007f0035e6d3efd7544cd0e4f728203a76f284f99e3e7f"
+    },
+    {
+      "run_id": "no_cost__high__seed3",
+      "variant": "no_cost",
+      "budget_level": "high",
+      "training_seed": 3,
+      "config": "configs/final_experiments_training/train/no_cost__high__seed3.json",
+      "config_sha256": "bad42f02f12f5dfdfbe3eae39660598dc4d80e775ce5be6c9213027abaaf88a7"
+    },
+    {
+      "run_id": "cost_mean__low__seed1",
+      "variant": "cost_mean",
+      "budget_level": "low",
+      "training_seed": 1,
+      "config": "configs/final_experiments_training/train/cost_mean__low__seed1.json",
+      "config_sha256": "22bfb10e2b8c0aeae7331192d59ad5ab6b02bfed1451314b449901fb518b5f3a"
+    },
+    {
+      "run_id": "cost_mean__low__seed2",
+      "variant": "cost_mean",
+      "budget_level": "low",
+      "training_seed": 2,
+      "config": "configs/final_experiments_training/train/cost_mean__low__seed2.json",
+      "config_sha256": "6f10d62a801b56089be351cbebf4cdb8f18378523b1149d1120e8c211be7b7c8"
+    },
+    {
+      "run_id": "cost_mean__low__seed3",
+      "variant": "cost_mean",
+      "budget_level": "low",
+      "training_seed": 3,
+      "config": "configs/final_experiments_training/train/cost_mean__low__seed3.json",
+      "config_sha256": "11d18105948f6bc4096cd2e30f0dd0bac2fca473ad3b252f880c495fe7c80659"
+    },
+    {
+      "run_id": "cost_mean__medium__seed1",
+      "variant": "cost_mean",
+      "budget_level": "medium",
+      "training_seed": 1,
+      "config": "configs/final_experiments_training/train/cost_mean__medium__seed1.json",
+      "config_sha256": "6d5b72494f46d306e9f5eda11e90a510508c8bd74940e8a3c912ca65d27e1996"
+    },
+    {
+      "run_id": "cost_mean__medium__seed2",
+      "variant": "cost_mean",
+      "budget_level": "medium",
+      "training_seed": 2,
+      "config": "configs/final_experiments_training/train/cost_mean__medium__seed2.json",
+      "config_sha256": "5c4d23a980ed2fda97bf823daf970cfa3f97ee68d58fc828edcbee1b8d7cb392"
+    },
+    {
+      "run_id": "cost_mean__medium__seed3",
+      "variant": "cost_mean",
+      "budget_level": "medium",
+      "training_seed": 3,
+      "config": "configs/final_experiments_training/train/cost_mean__medium__seed3.json",
+      "config_sha256": "9dfcd9abc92b9dd9d0a834f0d99ee493610693c407efa78349f1b956de9e120a"
+    },
+    {
+      "run_id": "cost_mean__high__seed1",
+      "variant": "cost_mean",
+      "budget_level": "high",
+      "training_seed": 1,
+      "config": "configs/final_experiments_training/train/cost_mean__high__seed1.json",
+      "config_sha256": "478502f424210c86aeece1f1aed1d2c8fcf36490fd9bcc89f7181427a9bcba26"
+    },
+    {
+      "run_id": "cost_mean__high__seed2",
+      "variant": "cost_mean",
+      "budget_level": "high",
+      "training_seed": 2,
+      "config": "configs/final_experiments_training/train/cost_mean__high__seed2.json",
+      "config_sha256": "697c00f5b8bc4ff4a73fa27509e27a0a7abb1abf082a6fddae23fd36b993e5d3"
+    },
+    {
+      "run_id": "cost_mean__high__seed3",
+      "variant": "cost_mean",
+      "budget_level": "high",
+      "training_seed": 3,
+      "config": "configs/final_experiments_training/train/cost_mean__high__seed3.json",
+      "config_sha256": "2e895ec09b837b33fa4f609b81dac3b0e447feb1af504c20f09567eb1acd1cd9"
+    },
+    {
+      "run_id": "cost_uncertainty__low__seed1",
+      "variant": "cost_uncertainty",
+      "budget_level": "low",
+      "training_seed": 1,
+      "config": "configs/final_experiments_training/train/cost_uncertainty__low__seed1.json",
+      "config_sha256": "8c80afbf3263fc93e8b9639b13778588d2cbea39684e0d9e79c78985d609eb7b"
+    },
+    {
+      "run_id": "cost_uncertainty__low__seed2",
+      "variant": "cost_uncertainty",
+      "budget_level": "low",
+      "training_seed": 2,
+      "config": "configs/final_experiments_training/train/cost_uncertainty__low__seed2.json",
+      "config_sha256": "67652b8325da2ec5b791bfbb14448439e87b45a0cac64aa878e9a4c82f35d0b5"
+    },
+    {
+      "run_id": "cost_uncertainty__low__seed3",
+      "variant": "cost_uncertainty",
+      "budget_level": "low",
+      "training_seed": 3,
+      "config": "configs/final_experiments_training/train/cost_uncertainty__low__seed3.json",
+      "config_sha256": "22f58ad32a2773010bf21e976c12e7da963a2888c171ffbed081864f7f00dad6"
+    },
+    {
+      "run_id": "cost_uncertainty__medium__seed1",
+      "variant": "cost_uncertainty",
+      "budget_level": "medium",
+      "training_seed": 1,
+      "config": "configs/final_experiments_training/train/cost_uncertainty__medium__seed1.json",
+      "config_sha256": "8b9e949943d1851452c204f5eec4dd598048d9db3cd7f62d6dd6173339c025ad"
+    },
+    {
+      "run_id": "cost_uncertainty__medium__seed2",
+      "variant": "cost_uncertainty",
+      "budget_level": "medium",
+      "training_seed": 2,
+      "config": "configs/final_experiments_training/train/cost_uncertainty__medium__seed2.json",
+      "config_sha256": "0900d77863e1db7ab1ccc30dee5f27d43de15eb0dd6dbb5f7d04e413d66e0d6c"
+    },
+    {
+      "run_id": "cost_uncertainty__medium__seed3",
+      "variant": "cost_uncertainty",
+      "budget_level": "medium",
+      "training_seed": 3,
+      "config": "configs/final_experiments_training/train/cost_uncertainty__medium__seed3.json",
+      "config_sha256": "b2bb1924ff2792940fe27080fa71e0c6f613bff1326c2d033c315aaa1fb3cd7e"
+    },
+    {
+      "run_id": "cost_uncertainty__high__seed1",
+      "variant": "cost_uncertainty",
+      "budget_level": "high",
+      "training_seed": 1,
+      "config": "configs/final_experiments_training/train/cost_uncertainty__high__seed1.json",
+      "config_sha256": "353e6db5d94d349b383b7f0f0b940b027177812acc1ee7dd9193e53b6214eb5c"
+    },
+    {
+      "run_id": "cost_uncertainty__high__seed2",
+      "variant": "cost_uncertainty",
+      "budget_level": "high",
+      "training_seed": 2,
+      "config": "configs/final_experiments_training/train/cost_uncertainty__high__seed2.json",
+      "config_sha256": "6bdfb655a7ec6d424ea54b8f78e1806a648b7a29e796a286943d68b3387f8cb3"
+    },
+    {
+      "run_id": "cost_uncertainty__high__seed3",
+      "variant": "cost_uncertainty",
+      "budget_level": "high",
+      "training_seed": 3,
+      "config": "configs/final_experiments_training/train/cost_uncertainty__high__seed3.json",
+      "config_sha256": "2ef7684d92687b2ff5538042b5f4b5b465aed18c536f65a7ba9b4f653cccbabb"
+    }
+  ],
+  "timing_runs": [
+    {
+      "run_id": "no_cost__low",
+      "variant": "no_cost",
+      "budget_level": "low",
+      "training_seed": 1,
+      "config": "configs/final_experiments_training/timing/no_cost__low.json",
+      "config_sha256": "93a20bbe848510685cbb75078532102fd99caf2aa2102be66290c748875b1dab"
+    },
+    {
+      "run_id": "no_cost__medium",
+      "variant": "no_cost",
+      "budget_level": "medium",
+      "training_seed": 1,
+      "config": "configs/final_experiments_training/timing/no_cost__medium.json",
+      "config_sha256": "a728fe90a89763c14d2760b726b1de92346d52f23c3a45dde5d55417d5f7ce08"
+    },
+    {
+      "run_id": "no_cost__high",
+      "variant": "no_cost",
+      "budget_level": "high",
+      "training_seed": 1,
+      "config": "configs/final_experiments_training/timing/no_cost__high.json",
+      "config_sha256": "5b8f872cf807bfaeb6f041a3af97dfbadca0638e924aad4d935b653d68eaf2ed"
+    },
+    {
+      "run_id": "cost_mean__low",
+      "variant": "cost_mean",
+      "budget_level": "low",
+      "training_seed": 1,
+      "config": "configs/final_experiments_training/timing/cost_mean__low.json",
+      "config_sha256": "27aba2d287a837aeac7c05d354d01671a9a6c4bbdb74227f251bc518919babfc"
+    },
+    {
+      "run_id": "cost_mean__medium",
+      "variant": "cost_mean",
+      "budget_level": "medium",
+      "training_seed": 1,
+      "config": "configs/final_experiments_training/timing/cost_mean__medium.json",
+      "config_sha256": "d25f577f40cbf2f159e4cd83bcbba43a6192267754a17a97a9c554bddc41ac30"
+    },
+    {
+      "run_id": "cost_mean__high",
+      "variant": "cost_mean",
+      "budget_level": "high",
+      "training_seed": 1,
+      "config": "configs/final_experiments_training/timing/cost_mean__high.json",
+      "config_sha256": "daba2036ab8bad0a265c3b35c1e4f8404350f1e4432ffe3b76d177cb4c70b398"
+    },
+    {
+      "run_id": "cost_uncertainty__low",
+      "variant": "cost_uncertainty",
+      "budget_level": "low",
+      "training_seed": 1,
+      "config": "configs/final_experiments_training/timing/cost_uncertainty__low.json",
+      "config_sha256": "8bb27c8f9d1da7573c2ae57102352b4a7d7caa3e741226cdd8c531c99266e5ea"
+    },
+    {
+      "run_id": "cost_uncertainty__medium",
+      "variant": "cost_uncertainty",
+      "budget_level": "medium",
+      "training_seed": 1,
+      "config": "configs/final_experiments_training/timing/cost_uncertainty__medium.json",
+      "config_sha256": "49c26c119dd09e29a9f90fba72847de1c0a72e55c93d320857c1d1e18e8423a8"
+    },
+    {
+      "run_id": "cost_uncertainty__high",
+      "variant": "cost_uncertainty",
+      "budget_level": "high",
+      "training_seed": 1,
+      "config": "configs/final_experiments_training/timing/cost_uncertainty__high.json",
+      "config_sha256": "ead4aa858d3f6deaa98d0090803a162b3fc715e0b4b14ea4fe4c7372ef53bc6e"
+    }
+  ],
+  "inputs": {
+    "configs/pilots_and_audits/debug/debug_cost_mean_longrun_1m_new_critic.json": "dc1857d56ad490c82be05a993bf6987afb254743cbba39d6f2c8b3de7df1834e",
+    "configs/gp_hyperparameter_selection/gp_configs.json": "20b699018c25aab12f387acaff64f8343b487127a8b2e6a8074de2a99abf0eca",
+    "results/gp_selection/objective/selected.json": "d5f74f90a5830433b8470b41719297cc3697cd0d5829d53ad65a802897b62550",
+    "results/gp_selection/cost/selected.json": "19594e8da857a4b32da122342c0326590cf69105f880e68618d5d1c27ff73bcb",
+    "results/budget_calibration_median/train20_caps_fit.budgets.json": "7003ec8ed7072226dc5094530d6c93f9a53f7414b29f600643feb067a40f4166",
+    "configs/pilots_and_audits/debug/debug_cost_mean_test8_scaled_new_critic.json": "e1adf26576f420e451c76a3a542f2aff049e2b4f45288a225b50c1373fb3b078"
+  },
+  "source_hashes": {
+    "bo/candidate_set_batch.py": "877ba78b2a51848efca57ee5d0774a6fe23f1301cb8e6c5902321fea881b6450",
+    "bo/candidate_sets.py": "76ef727ef7be94540fd4af025a8f936be328d612556776b40ccc84dc7aaaf406",
+    "bo/gaussian_process_batch.py": "75d935e10ea8eaf44c714b55710ade190777be36921affc50d90ef0f5eaa0d6d",
+    "bo/problems/base.py": "7f1fd2e24da69f8c877ae37c432ffef899f52c1199dc00393517c5d213dabac5",
+    "bo/problems/registry.py": "14b09ab4e09a3e2c960a22f7af2b03f37f321e9ef962813e8081618aa575239e",
+    "bo/problems/toy_rbf.py": "7151dd4f8b56912031918344b9163904247a1f71002e9f7680192560cdae4e8d",
+    "bo/problems/yahpo_lcbench.py": "8cc40997a6d316015a6ceef7271d081680ba06d24e17d259458fec1ffbb58c52",
+    "envs/BO_env.py": "cb14069a89c066a9eae362936fe775f5cdd64d7dbce406c5eebca7c03e5243e8",
+    "reinforcement_learning/agents/neural_AF.py": "b0038aee2088f690895410c34676c78e48dbf4477411e7b3a8849f01fc8838e9",
+    "reinforcement_learning/ppo_no_gym.py": "396a7cf8c650ea184dae7a1c2977d91a0816524c52a7b25e7a71f9ae44067252",
+    "scripts/TRAIN_AGENTS.py": "de4c14d5b7dc55ec18ae524112201975015383343c2fd262e17a61438d3fafc6",
+    "utils/config.py": "c17cd14230b02f9be74fc08a0546c1e53ca2d5fa78ba389b2cf729a75ad2d4ce",
+    "utils/seeding.py": "e76568099be8c3219e35c8d98cf7df5b2594dceb0841cef46b70004d6a95bcb0"
+  },
+  "protocol_sha256": "f355dbe5854615e4d3fa95933281ad5a61a2067d2e93554531f58ee162ee332c"
+}

@@ -1,0 +1,34 @@
+{
+  "status": "complete",
+  "config_path": "configs/final_experiments_training/timing/cost_mean__high.json",
+  "config_sha256": "daba2036ab8bad0a265c3b35c1e4f8404350f1e4432ffe3b76d177cb4c70b398",
+  "run_name": "CostAwareBO-YAHPO-LCBench__phase4_timing__cost_mean__high__1__1792153050210367300",
+  "run_dir": "runs/final_training/timing/CostAwareBO-YAHPO-LCBench__phase4_timing__cost_mean__high__1__1792153050210367300",
+  "checkpoint_dir": "checkpoints/final_training/timing/CostAwareBO-YAHPO-LCBench__phase4_timing__cost_mean__high__1__1792153050210367300",
+  "device": "cuda",
+  "device_name": "NVIDIA GeForce RTX 4070",
+  "torch_version": "2.12.0+cu126",
+  "cuda_version": "12.6",
+  "global_step": 49152,
+  "iterations": 6,
+  "setup_seconds": 13.112794400003622,
+  "iteration_seconds": [
+    52.09531319999951,
+    72.92892320000101,
+    71.28159539999615,
+    71.11862389999442,
+    68.07468609999341,
+    74.05856759999006
+  ],
+  "final_save_seconds": 0.008113400006550364,
+  "finalize_seconds": 0.015849499992327765,
+  "total_seconds": 422.6863616000046,
+  "checkpoints": [
+    {
+      "path": "checkpoints/final_training/timing/CostAwareBO-YAHPO-LCBench__phase4_timing__cost_mean__high__1__1792153050210367300/model_final_step_49152.pt",
+      "step": 49152,
+      "kind": "final",
+      "sha256": "6a62070d8f8ea004b3fd04f2012b41bf9e72a957570e96136d447e9323cfd7eb"
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 """Prepare, time, train and validate the frozen 27-run Phase 4 experiment.
 
-Run from the repository root; see docs/phase4_training_new.md.
+Run from the repository root; see docs/TRAIN_AGENTS_guide_new.md.
 The prepare/check commands do not import PyTorch or load YAHPO.
 """
 from __future__ import annotations
@@ -18,7 +18,8 @@ import subprocess
 import sys
 import time
 
-ROOT = Path(__file__).resolve().parents[1]
+SCRIPT_PATH = Path(__file__).resolve()
+ROOT = SCRIPT_PATH.parents[1]
 sys.path.insert(0, str(ROOT))
 
 TRAIN = ['3945', '7593', '34539', '126025', '126026', '126029', '146212',
@@ -35,7 +36,8 @@ TEMPLATE = 'configs/pilots_and_audits/debug/debug_cost_mean_longrun_1m_new_criti
 PHASE2 = 'configs/gp_hyperparameter_selection/gp_configs.json'
 OBJECTIVE = 'results/gp_selection/objective/selected.json'
 COST = 'results/gp_selection/cost/selected.json'
-DEFAULT_PROTOCOL = 'configs/final_training/protocol.json'
+DEFAULT_CONFIG_DIR = 'configs/final_experiments_training'
+DEFAULT_PROTOCOL = f'{DEFAULT_CONFIG_DIR}/protocol.json'
 
 
 def read_json(path):
@@ -192,7 +194,8 @@ def prepare(output, results_root):
     read_bank(protocol)
     for path in (TEMPLATE, PHASE2, OBJECTIVE, COST, phase['budgets_file'], phase['base_config']):
         protocol['inputs'][path] = digest(path)
-    source_files = [Path('scripts/phase4.py')]
+    # Record the actual filename, including when this driver has been renamed.
+    source_files = [SCRIPT_PATH.relative_to(ROOT)]
     for directory in ('bo', 'envs', 'reinforcement_learning', 'utils'):
         source_files += [p for p in Path(directory).rglob('*.py') if not p.stem.endswith('_new')]
     protocol['source_hashes'] = {p.as_posix(): digest(p) for p in sorted(source_files)}
@@ -382,7 +385,7 @@ def launch_evaluation(protocol_path, protocol, run, checkpoint, profile):
     summary_path = output / 'summary.json'
     if not summary_path.exists():
         start = time.perf_counter()
-        subprocess.run([sys.executable, '-u', 'scripts/phase4.py', '_evaluate', '--protocol', protocol_path,
+        subprocess.run([sys.executable, '-u', str(SCRIPT_PATH), '_evaluate', '--protocol', protocol_path,
                         '--run-id', run['run_id'], '--checkpoint', checkpoint['path'],
                         '--step', str(checkpoint['step']), '--profile', profile], cwd=ROOT, check=True)
         summary = read_json(summary_path)
@@ -509,7 +512,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest='command', required=True)
     prep = commands.add_parser('prepare', help='Write the protocol and configs; no training.')
-    prep.add_argument('--output', default='configs/final_training')
+    prep.add_argument('--output', default=DEFAULT_CONFIG_DIR)
     prep.add_argument('--results-root', default='results/final_training')
     for command in ('check', 'timing', 'train', 'validate', '_evaluate'):
         sub = commands.add_parser(command)
