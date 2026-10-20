@@ -1,8 +1,8 @@
 {
-  "protocol_sha256": "f355dbe5854615e4d3fa95933281ad5a61a2067d2e93554531f58ee162ee332c",
+  "protocol_sha256": "1193dfa004319e10c6721738c63ecee2a763bf1f79468016a08aa775ced18324",
   "config_sha256": "8bb27c8f9d1da7573c2ae57102352b4a7d7caa3e741226cdd8c531c99266e5ea",
   "checkpoint": {
-    "path": "checkpoints/final_training/timing/CostAwareBO-YAHPO-LCBench__phase4_timing__cost_uncertainty__low__1__1792153527612646600/model_final_step_49152.pt",
+    "path": "checkpoints/final_training/timing/CostAwareBO-YAHPO-LCBench__phase4_timing__cost_uncertainty__low__1__1792523407152711400/model_final_step_49152.pt",
     "step": 49152,
     "kind": "final",
     "sha256": "8216bc93168f2446cf1c15db8f44eebcda4d6e886a06e5cc2bcc09a0fed46da1"
@@ -22,9 +22,9 @@
     "189865": 0.015589063987135887
   },
   "n_episodes": 256,
-  "worker_seconds": 21.84511819999898,
+  "worker_seconds": 18.780653800000437,
   "device_name": "NVIDIA GeForce RTX 4070",
   "torch_version": "2.12.0+cu126",
   "numpy_version": "1.26.4",
-  "process_seconds": 28.126721200009342
+  "process_seconds": 24.45904220000375
 }

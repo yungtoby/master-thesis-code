@@ -1,7 +1,6 @@
 {
-  "protocol_sha256": "f355dbe5854615e4d3fa95933281ad5a61a2067d2e93554531f58ee162ee332c",
+  "protocol_sha256": "1193dfa004319e10c6721738c63ecee2a763bf1f79468016a08aa775ced18324",
   "run_id": "cost_mean__medium",
-  "started_utc": "2026-10-16T12:07:04.129458+00:00",
-  "process_seconds": 584.1921403000015,
-  "status": "complete"
+  "status": "complete",
+  "process_seconds": 601.8361390999635
 }

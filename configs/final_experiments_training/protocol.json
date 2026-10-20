@@ -1,90 +1,12 @@
 {
-  "version": 1,
-  "prepared_utc": "2026-10-16T10:53:32.055478+00:00",
-  "reviewed_commit": "37ea8b80ed05d93105603abe18e1d7dedd7e0af4",
   "results_root": "results/final_training",
-  "splits": {
-    "train": [
-      "3945",
-      "7593",
-      "34539",
-      "126025",
-      "126026",
-      "126029",
-      "146212",
-      "167104",
-      "167149",
-      "167152",
-      "167161",
-      "167168",
-      "167181",
-      "167184",
-      "167185",
-      "167190",
-      "167200",
-      "167201",
-      "168329",
-      "168330"
-    ],
-    "validation": [
-      "168331",
-      "168335",
-      "168868",
-      "168908",
-      "168910",
-      "189354",
-      "189862",
-      "189865"
-    ],
-    "test": [
-      "189866",
-      "189873",
-      "189905",
-      "189906",
-      "189908",
-      "189909"
-    ]
-  },
-  "variants": [
-    "no_cost",
-    "cost_mean",
-    "cost_uncertainty"
-  ],
-  "training_seeds": [
-    1,
-    2,
-    3
-  ],
-  "budgets": [
-    {
-      "level": "low",
-      "target_total_evaluations": 10,
-      "target_acquisitions": 7,
-      "budget": 1090.0049419403076,
-      "median_cost_at_target": 1090.0049419403076
-    },
-    {
-      "level": "medium",
-      "target_total_evaluations": 20,
-      "target_acquisitions": 17,
-      "budget": 2710.8908500671387,
-      "median_cost_at_target": 2710.8908500671387
-    },
-    {
-      "level": "high",
-      "target_total_evaluations": 30,
-      "target_acquisitions": 27,
-      "budget": 4322.566970825195,
-      "median_cost_at_target": 4322.566970825195
-    }
-  ],
   "checkpoint_steps": [
     262144,
     524288,
     786432,
     1048576
   ],
-  "selection_rule": "For each variant/budget/training seed, minimum unrounded mean of instance means; exact ties choose earlier step. Keep every seed.",
+  "selection_rule": "For each variant, budget, and training seed, select the checkpoint with the lowest unrounded mean of validation-instance means. An exact tie selects the earlier checkpoint. Retain every seed.",
   "validation": {
     "instances": [
       "168331",
@@ -128,10 +50,6 @@
       "n_init": 3,
       "dtype": "float32"
     }
-  },
-  "timing": {
-    "warmup_updates": 2,
-    "measured_updates": 4
   },
   "runs": [
     {
@@ -444,9 +362,9 @@
     "envs/BO_env.py": "cb14069a89c066a9eae362936fe775f5cdd64d7dbce406c5eebca7c03e5243e8",
     "reinforcement_learning/agents/neural_AF.py": "b0038aee2088f690895410c34676c78e48dbf4477411e7b3a8849f01fc8838e9",
     "reinforcement_learning/ppo_no_gym.py": "396a7cf8c650ea184dae7a1c2977d91a0816524c52a7b25e7a71f9ae44067252",
-    "scripts/TRAIN_AGENTS.py": "de4c14d5b7dc55ec18ae524112201975015383343c2fd262e17a61438d3fafc6",
+    "scripts/TRAIN_AGENTS.py": "869b4ea9f83d1c0d6907ce1c491477c77dacbbcf8eee6e47d85c942ffb5279d8",
     "utils/config.py": "c17cd14230b02f9be74fc08a0546c1e53ca2d5fa78ba389b2cf729a75ad2d4ce",
     "utils/seeding.py": "e76568099be8c3219e35c8d98cf7df5b2594dceb0841cef46b70004d6a95bcb0"
   },
-  "protocol_sha256": "f355dbe5854615e4d3fa95933281ad5a61a2067d2e93554531f58ee162ee332c"
+  "protocol_sha256": "1193dfa004319e10c6721738c63ecee2a763bf1f79468016a08aa775ced18324"
 }
