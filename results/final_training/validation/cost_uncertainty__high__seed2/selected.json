@@ -1,0 +1,116 @@
+{
+  "protocol_sha256": "1193dfa004319e10c6721738c63ecee2a763bf1f79468016a08aa775ced18324",
+  "run_id": "cost_uncertainty__high__seed2",
+  "variant": "cost_uncertainty",
+  "budget_level": "high",
+  "training_seed": 2,
+  "config": "configs/final_experiments_training/train/cost_uncertainty__high__seed2.json",
+  "config_sha256": "6bdfb655a7ec6d424ea54b8f78e1806a648b7a29e796a286943d68b3387f8cb3",
+  "scores": [
+    {
+      "step": 262144,
+      "mean_regret": 0.018447142792865634,
+      "instance_means": {
+        "168331": 0.0359589159488678,
+        "168335": 0.016704779118299484,
+        "168868": 0.0007612667977809906,
+        "168908": 0.036473145708441734,
+        "168910": 0.014203587546944618,
+        "189354": 0.03568379022181034,
+        "189862": 0.005987545475363731,
+        "189865": 0.0018041115254163742
+      },
+      "checkpoint": {
+        "path": "checkpoints/final_training/train/CostAwareBO-YAHPO-LCBench__phase4_train__cost_uncertainty__high__2__1792837748879876300/model_step_262144.pt",
+        "step": 262144,
+        "kind": "periodic",
+        "sha256": "956163d8ec272d4c1361b978f7e8bbc8c74f34fc034b77e0d02d13684677909b"
+      },
+      "episodes_csv": "results/final_training/validation/cost_uncertainty__high__seed2/step_262144/episodes.csv"
+    },
+    {
+      "step": 524288,
+      "mean_regret": 0.018511046888306737,
+      "instance_means": {
+        "168331": 0.039243245497345924,
+        "168335": 0.01902572624385357,
+        "168868": 0.0007580891251564026,
+        "168908": 0.030921878293156624,
+        "168910": 0.015376061201095581,
+        "189354": 0.03493752144277096,
+        "189862": 0.004996189847588539,
+        "189865": 0.0028296634554862976
+      },
+      "checkpoint": {
+        "path": "checkpoints/final_training/train/CostAwareBO-YAHPO-LCBench__phase4_train__cost_uncertainty__high__2__1792837748879876300/model_step_524288.pt",
+        "step": 524288,
+        "kind": "periodic",
+        "sha256": "004484b263038374760c5e6119f3a8416a17f93c004f1923dfe6d109cccf23a5"
+      },
+      "episodes_csv": "results/final_training/validation/cost_uncertainty__high__seed2/step_524288/episodes.csv"
+    },
+    {
+      "step": 786432,
+      "mean_regret": 0.021691925823688507,
+      "instance_means": {
+        "168331": 0.05175093561410904,
+        "168335": 0.019283033907413483,
+        "168868": 0.0006355103105306625,
+        "168908": 0.0315611083060503,
+        "168910": 0.022346653044223785,
+        "189354": 0.03442189656198025,
+        "189862": 0.008678482845425606,
+        "189865": 0.004857785999774933
+      },
+      "checkpoint": {
+        "path": "checkpoints/final_training/train/CostAwareBO-YAHPO-LCBench__phase4_train__cost_uncertainty__high__2__1792837748879876300/model_step_786432.pt",
+        "step": 786432,
+        "kind": "periodic",
+        "sha256": "c7389c11f02dcc593a17d54f5732199d81a95053b40c1d8b17c9c6a80009d47b"
+      },
+      "episodes_csv": "results/final_training/validation/cost_uncertainty__high__seed2/step_786432/episodes.csv"
+    },
+    {
+      "step": 1048576,
+      "mean_regret": 0.022013746551238,
+      "instance_means": {
+        "168331": 0.046983868815004826,
+        "168335": 0.01888859272003174,
+        "168868": 0.0006236545741558075,
+        "168908": 0.0315611083060503,
+        "168910": 0.027168001979589462,
+        "189354": 0.03466065600514412,
+        "189862": 0.010548986494541168,
+        "189865": 0.005675103515386581
+      },
+      "checkpoint": {
+        "path": "checkpoints/final_training/train/CostAwareBO-YAHPO-LCBench__phase4_train__cost_uncertainty__high__2__1792837748879876300/model_step_1048576.pt",
+        "step": 1048576,
+        "kind": "periodic",
+        "sha256": "e182130424da0297e2d83cb778c0e58416e477f0601166ee6fb1871394b6adaa"
+      },
+      "episodes_csv": "results/final_training/validation/cost_uncertainty__high__seed2/step_1048576/episodes.csv"
+    }
+  ],
+  "selected": {
+    "step": 262144,
+    "mean_regret": 0.018447142792865634,
+    "instance_means": {
+      "168331": 0.0359589159488678,
+      "168335": 0.016704779118299484,
+      "168868": 0.0007612667977809906,
+      "168908": 0.036473145708441734,
+      "168910": 0.014203587546944618,
+      "189354": 0.03568379022181034,
+      "189862": 0.005987545475363731,
+      "189865": 0.0018041115254163742
+    },
+    "checkpoint": {
+      "path": "checkpoints/final_training/train/CostAwareBO-YAHPO-LCBench__phase4_train__cost_uncertainty__high__2__1792837748879876300/model_step_262144.pt",
+      "step": 262144,
+      "kind": "periodic",
+      "sha256": "956163d8ec272d4c1361b978f7e8bbc8c74f34fc034b77e0d02d13684677909b"
+    },
+    "episodes_csv": "results/final_training/validation/cost_uncertainty__high__seed2/step_262144/episodes.csv"
+  }
+}
