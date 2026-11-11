@@ -1,0 +1,18 @@
+{
+  "protocol_sha256": "5b17cbd8817ddcf6e95ee65e24ea51b5dbbdd25383432900e35dcb4d60497b37",
+  "job": {
+    "job_id": "ei_cool__test_high",
+    "method": "ei_cool",
+    "training_budget": "none",
+    "test_budget": "high",
+    "budget": 4322.566970825195,
+    "training_seed": "",
+    "config": "results\\final_testing_NEW\\baseline_config.json",
+    "checkpoint": null
+  },
+  "episode_bank_sha256": "63d5a258822a3e2bf60ae97bd487c11a95721ca1e1d340361ed6ca39fa0a8f61",
+  "episodes_csv": "results\\final_testing_NEW\\jobs\\ei_cool__test_high\\episodes.csv",
+  "episodes_sha256": "b0d1abd7bfae04267c82326a850cddb8c24e4fbe9f9e23d67e4ab874f2d50bb3",
+  "n_episodes": 768,
+  "worker_seconds": 83.57992530000047
+}

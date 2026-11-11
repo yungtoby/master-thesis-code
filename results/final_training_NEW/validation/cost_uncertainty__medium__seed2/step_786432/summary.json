@@ -1,0 +1,30 @@
+{
+  "protocol_sha256": "f7211b77a0417c9ab258d70e9eb1473e495f710b52b926e564fe947445153c22",
+  "config_sha256": "f02812b38712f9b1f84c99ab15095fcda66d1cdf4f9c451b7540f7f8b7d0d347",
+  "checkpoint": {
+    "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_uncertainty__medium__2__1794123084479341800/model_step_786432.pt",
+    "step": 786432,
+    "kind": "periodic",
+    "sha256": "cb24504220bbee1d5d1aa504654008ddcea18b4d9661b7a9c3b7b5a28ecba3db"
+  },
+  "episode_bank_sha256": "c6a508f5802a6765b73252af2a2b48cb458610e2c4484333e16d6e579e22250f",
+  "episodes_csv": "results/final_training_NEW/validation/cost_uncertainty__medium__seed2/step_786432/episodes.csv",
+  "episodes_sha256": "c52443fa16d2d1712985de560bd3489d809a8a811c5478df07394b9752c95f6c",
+  "mean_regret": 0.021628874237649143,
+  "instance_means": {
+    "168331": 0.04406338091939688,
+    "168335": 0.017624156549572945,
+    "168868": 0.001815536990761757,
+    "168908": 0.03954973258078098,
+    "168910": 0.015538772568106651,
+    "189354": 0.0468476302921772,
+    "189862": 0.006009019911289215,
+    "189865": 0.0015827640891075134
+  },
+  "n_episodes": 256,
+  "worker_seconds": 28.442763199913315,
+  "device_name": "NVIDIA GeForce RTX 4070",
+  "torch_version": "2.12.0+cu126",
+  "numpy_version": "1.26.4",
+  "process_seconds": 32.09236799995415
+}

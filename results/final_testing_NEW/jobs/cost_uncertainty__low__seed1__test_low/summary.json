@@ -1,0 +1,23 @@
+{
+  "protocol_sha256": "5b17cbd8817ddcf6e95ee65e24ea51b5dbbdd25383432900e35dcb4d60497b37",
+  "job": {
+    "job_id": "cost_uncertainty__low__seed1__test_low",
+    "method": "cost_uncertainty",
+    "training_budget": "low",
+    "test_budget": "low",
+    "budget": 1090.0049419403076,
+    "training_seed": 1,
+    "config": "configs/final_experiments_training_NEW/train/cost_uncertainty__low__seed1.json",
+    "checkpoint": {
+      "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_uncertainty__low__1__1794054313254991000/model_step_1048576.pt",
+      "step": 1048576,
+      "kind": "periodic",
+      "sha256": "95a90a377311ea79ed9eea96cc623794aa97c10cb9abc3ad23008c04f22a31d9"
+    }
+  },
+  "episode_bank_sha256": "63d5a258822a3e2bf60ae97bd487c11a95721ca1e1d340361ed6ca39fa0a8f61",
+  "episodes_csv": "results\\final_testing_NEW\\jobs\\cost_uncertainty__low__seed1__test_low\\episodes.csv",
+  "episodes_sha256": "eb2a4d469e7a2536cbba1fb0d71bbaa2d4fab949549c41e33722081a6462b685",
+  "n_episodes": 768,
+  "worker_seconds": 56.029577000001154
+}

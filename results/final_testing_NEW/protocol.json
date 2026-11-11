@@ -1,0 +1,1445 @@
+{
+  "results_root": "results/final_testing_NEW",
+  "test": {
+    "instances": [
+      "189866",
+      "189873",
+      "189905",
+      "189906",
+      "189908",
+      "189909"
+    ],
+    "episodes_per_instance": 128,
+    "batch_size": 32,
+    "seed": 1,
+    "action_mode": "argmax",
+    "episode_bank": "results\\final_testing_NEW\\paired_test_episodes.npz",
+    "episode_bank_sha256": "63d5a258822a3e2bf60ae97bd487c11a95721ca1e1d340361ed6ca39fa0a8f61",
+    "bank_signature": {
+      "format": "phase2_step_noise_v1",
+      "seed": 1,
+      "episodes_per_instance": 128,
+      "max_acquisitions": 61,
+      "problem_family": {
+        "type": "yahpo_lcbench",
+        "instances": [
+          "189866",
+          "189873",
+          "189905",
+          "189906",
+          "189908",
+          "189909"
+        ],
+        "objective_key": "val_accuracy",
+        "objective_scale": 0.01,
+        "cost_key": "time",
+        "epoch": 51
+      },
+      "n_candidates": 64,
+      "n_init": 3,
+      "dtype": "float32"
+    }
+  },
+  "jobs": [
+    {
+      "job_id": "no_cost__low__seed1__test_low",
+      "method": "no_cost",
+      "training_budget": "low",
+      "test_budget": "low",
+      "budget": 1090.0049419403076,
+      "training_seed": 1,
+      "config": "configs/final_experiments_training_NEW/train/no_cost__low__seed1.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__no_cost__low__1__1793827761514942900/model_step_1048576.pt",
+        "step": 1048576,
+        "kind": "periodic",
+        "sha256": "c769a69119be77f6ad3177d9bd7d7ca9aefb0b27a90aa2cdb5b240c6aeaabda8"
+      }
+    },
+    {
+      "job_id": "no_cost__low__seed1__test_medium",
+      "method": "no_cost",
+      "training_budget": "low",
+      "test_budget": "medium",
+      "budget": 2710.8908500671387,
+      "training_seed": 1,
+      "config": "configs/final_experiments_training_NEW/train/no_cost__low__seed1.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__no_cost__low__1__1793827761514942900/model_step_1048576.pt",
+        "step": 1048576,
+        "kind": "periodic",
+        "sha256": "c769a69119be77f6ad3177d9bd7d7ca9aefb0b27a90aa2cdb5b240c6aeaabda8"
+      }
+    },
+    {
+      "job_id": "no_cost__low__seed1__test_high",
+      "method": "no_cost",
+      "training_budget": "low",
+      "test_budget": "high",
+      "budget": 4322.566970825195,
+      "training_seed": 1,
+      "config": "configs/final_experiments_training_NEW/train/no_cost__low__seed1.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__no_cost__low__1__1793827761514942900/model_step_1048576.pt",
+        "step": 1048576,
+        "kind": "periodic",
+        "sha256": "c769a69119be77f6ad3177d9bd7d7ca9aefb0b27a90aa2cdb5b240c6aeaabda8"
+      }
+    },
+    {
+      "job_id": "no_cost__low__seed2__test_low",
+      "method": "no_cost",
+      "training_budget": "low",
+      "test_budget": "low",
+      "budget": 1090.0049419403076,
+      "training_seed": 2,
+      "config": "configs/final_experiments_training_NEW/train/no_cost__low__seed2.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__no_cost__low__2__1793846307473004900/model_step_1048576.pt",
+        "step": 1048576,
+        "kind": "periodic",
+        "sha256": "5af05d3bb1e4c17a4fbcfb2e0952450ae3499c9b491734f1d62b59848b7eadd8"
+      }
+    },
+    {
+      "job_id": "no_cost__low__seed2__test_medium",
+      "method": "no_cost",
+      "training_budget": "low",
+      "test_budget": "medium",
+      "budget": 2710.8908500671387,
+      "training_seed": 2,
+      "config": "configs/final_experiments_training_NEW/train/no_cost__low__seed2.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__no_cost__low__2__1793846307473004900/model_step_1048576.pt",
+        "step": 1048576,
+        "kind": "periodic",
+        "sha256": "5af05d3bb1e4c17a4fbcfb2e0952450ae3499c9b491734f1d62b59848b7eadd8"
+      }
+    },
+    {
+      "job_id": "no_cost__low__seed2__test_high",
+      "method": "no_cost",
+      "training_budget": "low",
+      "test_budget": "high",
+      "budget": 4322.566970825195,
+      "training_seed": 2,
+      "config": "configs/final_experiments_training_NEW/train/no_cost__low__seed2.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__no_cost__low__2__1793846307473004900/model_step_1048576.pt",
+        "step": 1048576,
+        "kind": "periodic",
+        "sha256": "5af05d3bb1e4c17a4fbcfb2e0952450ae3499c9b491734f1d62b59848b7eadd8"
+      }
+    },
+    {
+      "job_id": "no_cost__low__seed3__test_low",
+      "method": "no_cost",
+      "training_budget": "low",
+      "test_budget": "low",
+      "budget": 1090.0049419403076,
+      "training_seed": 3,
+      "config": "configs/final_experiments_training_NEW/train/no_cost__low__seed3.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__no_cost__low__3__1793864897494559600/model_step_524288.pt",
+        "step": 524288,
+        "kind": "periodic",
+        "sha256": "cd48bd75750e5425f7ccfa908769e28d223d9e5b31621b581ce29bb13c1b4ab3"
+      }
+    },
+    {
+      "job_id": "no_cost__low__seed3__test_medium",
+      "method": "no_cost",
+      "training_budget": "low",
+      "test_budget": "medium",
+      "budget": 2710.8908500671387,
+      "training_seed": 3,
+      "config": "configs/final_experiments_training_NEW/train/no_cost__low__seed3.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__no_cost__low__3__1793864897494559600/model_step_524288.pt",
+        "step": 524288,
+        "kind": "periodic",
+        "sha256": "cd48bd75750e5425f7ccfa908769e28d223d9e5b31621b581ce29bb13c1b4ab3"
+      }
+    },
+    {
+      "job_id": "no_cost__low__seed3__test_high",
+      "method": "no_cost",
+      "training_budget": "low",
+      "test_budget": "high",
+      "budget": 4322.566970825195,
+      "training_seed": 3,
+      "config": "configs/final_experiments_training_NEW/train/no_cost__low__seed3.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__no_cost__low__3__1793864897494559600/model_step_524288.pt",
+        "step": 524288,
+        "kind": "periodic",
+        "sha256": "cd48bd75750e5425f7ccfa908769e28d223d9e5b31621b581ce29bb13c1b4ab3"
+      }
+    },
+    {
+      "job_id": "no_cost__medium__seed1__test_low",
+      "method": "no_cost",
+      "training_budget": "medium",
+      "test_budget": "low",
+      "budget": 1090.0049419403076,
+      "training_seed": 1,
+      "config": "configs/final_experiments_training_NEW/train/no_cost__medium__seed1.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__no_cost__medium__1__1793883500683973800/model_step_1048576.pt",
+        "step": 1048576,
+        "kind": "periodic",
+        "sha256": "2e778c2a8fe4018ff4cb407b203a70dc8df56853e4220b0cbbe8039740012dca"
+      }
+    },
+    {
+      "job_id": "no_cost__medium__seed1__test_medium",
+      "method": "no_cost",
+      "training_budget": "medium",
+      "test_budget": "medium",
+      "budget": 2710.8908500671387,
+      "training_seed": 1,
+      "config": "configs/final_experiments_training_NEW/train/no_cost__medium__seed1.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__no_cost__medium__1__1793883500683973800/model_step_1048576.pt",
+        "step": 1048576,
+        "kind": "periodic",
+        "sha256": "2e778c2a8fe4018ff4cb407b203a70dc8df56853e4220b0cbbe8039740012dca"
+      }
+    },
+    {
+      "job_id": "no_cost__medium__seed1__test_high",
+      "method": "no_cost",
+      "training_budget": "medium",
+      "test_budget": "high",
+      "budget": 4322.566970825195,
+      "training_seed": 1,
+      "config": "configs/final_experiments_training_NEW/train/no_cost__medium__seed1.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__no_cost__medium__1__1793883500683973800/model_step_1048576.pt",
+        "step": 1048576,
+        "kind": "periodic",
+        "sha256": "2e778c2a8fe4018ff4cb407b203a70dc8df56853e4220b0cbbe8039740012dca"
+      }
+    },
+    {
+      "job_id": "no_cost__medium__seed2__test_low",
+      "method": "no_cost",
+      "training_budget": "medium",
+      "test_budget": "low",
+      "budget": 1090.0049419403076,
+      "training_seed": 2,
+      "config": "configs/final_experiments_training_NEW/train/no_cost__medium__seed2.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__no_cost__medium__2__1793894173416922100/model_step_1048576.pt",
+        "step": 1048576,
+        "kind": "periodic",
+        "sha256": "76606ed51e7f69f691bae5f2a00c202b7b0d5551d69f988bb072828f93ce7833"
+      }
+    },
+    {
+      "job_id": "no_cost__medium__seed2__test_medium",
+      "method": "no_cost",
+      "training_budget": "medium",
+      "test_budget": "medium",
+      "budget": 2710.8908500671387,
+      "training_seed": 2,
+      "config": "configs/final_experiments_training_NEW/train/no_cost__medium__seed2.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__no_cost__medium__2__1793894173416922100/model_step_1048576.pt",
+        "step": 1048576,
+        "kind": "periodic",
+        "sha256": "76606ed51e7f69f691bae5f2a00c202b7b0d5551d69f988bb072828f93ce7833"
+      }
+    },
+    {
+      "job_id": "no_cost__medium__seed2__test_high",
+      "method": "no_cost",
+      "training_budget": "medium",
+      "test_budget": "high",
+      "budget": 4322.566970825195,
+      "training_seed": 2,
+      "config": "configs/final_experiments_training_NEW/train/no_cost__medium__seed2.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__no_cost__medium__2__1793894173416922100/model_step_1048576.pt",
+        "step": 1048576,
+        "kind": "periodic",
+        "sha256": "76606ed51e7f69f691bae5f2a00c202b7b0d5551d69f988bb072828f93ce7833"
+      }
+    },
+    {
+      "job_id": "no_cost__medium__seed3__test_low",
+      "method": "no_cost",
+      "training_budget": "medium",
+      "test_budget": "low",
+      "budget": 1090.0049419403076,
+      "training_seed": 3,
+      "config": "configs/final_experiments_training_NEW/train/no_cost__medium__seed3.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__no_cost__medium__3__1793904811050009100/model_step_1048576.pt",
+        "step": 1048576,
+        "kind": "periodic",
+        "sha256": "b66fd2874dcb075d32dcf8812267fa19f09b5472856dccb13950d8b933887016"
+      }
+    },
+    {
+      "job_id": "no_cost__medium__seed3__test_medium",
+      "method": "no_cost",
+      "training_budget": "medium",
+      "test_budget": "medium",
+      "budget": 2710.8908500671387,
+      "training_seed": 3,
+      "config": "configs/final_experiments_training_NEW/train/no_cost__medium__seed3.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__no_cost__medium__3__1793904811050009100/model_step_1048576.pt",
+        "step": 1048576,
+        "kind": "periodic",
+        "sha256": "b66fd2874dcb075d32dcf8812267fa19f09b5472856dccb13950d8b933887016"
+      }
+    },
+    {
+      "job_id": "no_cost__medium__seed3__test_high",
+      "method": "no_cost",
+      "training_budget": "medium",
+      "test_budget": "high",
+      "budget": 4322.566970825195,
+      "training_seed": 3,
+      "config": "configs/final_experiments_training_NEW/train/no_cost__medium__seed3.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__no_cost__medium__3__1793904811050009100/model_step_1048576.pt",
+        "step": 1048576,
+        "kind": "periodic",
+        "sha256": "b66fd2874dcb075d32dcf8812267fa19f09b5472856dccb13950d8b933887016"
+      }
+    },
+    {
+      "job_id": "no_cost__high__seed1__test_low",
+      "method": "no_cost",
+      "training_budget": "high",
+      "test_budget": "low",
+      "budget": 1090.0049419403076,
+      "training_seed": 1,
+      "config": "configs/final_experiments_training_NEW/train/no_cost__high__seed1.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__no_cost__high__1__1793915522884666000/model_step_1048576.pt",
+        "step": 1048576,
+        "kind": "periodic",
+        "sha256": "6b665d57ecf3c56fd199e5766437ecea4aa90e454deea70662340dd6a98086c1"
+      }
+    },
+    {
+      "job_id": "no_cost__high__seed1__test_medium",
+      "method": "no_cost",
+      "training_budget": "high",
+      "test_budget": "medium",
+      "budget": 2710.8908500671387,
+      "training_seed": 1,
+      "config": "configs/final_experiments_training_NEW/train/no_cost__high__seed1.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__no_cost__high__1__1793915522884666000/model_step_1048576.pt",
+        "step": 1048576,
+        "kind": "periodic",
+        "sha256": "6b665d57ecf3c56fd199e5766437ecea4aa90e454deea70662340dd6a98086c1"
+      }
+    },
+    {
+      "job_id": "no_cost__high__seed1__test_high",
+      "method": "no_cost",
+      "training_budget": "high",
+      "test_budget": "high",
+      "budget": 4322.566970825195,
+      "training_seed": 1,
+      "config": "configs/final_experiments_training_NEW/train/no_cost__high__seed1.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__no_cost__high__1__1793915522884666000/model_step_1048576.pt",
+        "step": 1048576,
+        "kind": "periodic",
+        "sha256": "6b665d57ecf3c56fd199e5766437ecea4aa90e454deea70662340dd6a98086c1"
+      }
+    },
+    {
+      "job_id": "no_cost__high__seed2__test_low",
+      "method": "no_cost",
+      "training_budget": "high",
+      "test_budget": "low",
+      "budget": 1090.0049419403076,
+      "training_seed": 2,
+      "config": "configs/final_experiments_training_NEW/train/no_cost__high__seed2.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__no_cost__high__2__1793923054596499000/model_step_1048576.pt",
+        "step": 1048576,
+        "kind": "periodic",
+        "sha256": "985eeba4fa7f75311f8a14b3b6031acce3a847436575ce40352cef2bd42b6984"
+      }
+    },
+    {
+      "job_id": "no_cost__high__seed2__test_medium",
+      "method": "no_cost",
+      "training_budget": "high",
+      "test_budget": "medium",
+      "budget": 2710.8908500671387,
+      "training_seed": 2,
+      "config": "configs/final_experiments_training_NEW/train/no_cost__high__seed2.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__no_cost__high__2__1793923054596499000/model_step_1048576.pt",
+        "step": 1048576,
+        "kind": "periodic",
+        "sha256": "985eeba4fa7f75311f8a14b3b6031acce3a847436575ce40352cef2bd42b6984"
+      }
+    },
+    {
+      "job_id": "no_cost__high__seed2__test_high",
+      "method": "no_cost",
+      "training_budget": "high",
+      "test_budget": "high",
+      "budget": 4322.566970825195,
+      "training_seed": 2,
+      "config": "configs/final_experiments_training_NEW/train/no_cost__high__seed2.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__no_cost__high__2__1793923054596499000/model_step_1048576.pt",
+        "step": 1048576,
+        "kind": "periodic",
+        "sha256": "985eeba4fa7f75311f8a14b3b6031acce3a847436575ce40352cef2bd42b6984"
+      }
+    },
+    {
+      "job_id": "no_cost__high__seed3__test_low",
+      "method": "no_cost",
+      "training_budget": "high",
+      "test_budget": "low",
+      "budget": 1090.0049419403076,
+      "training_seed": 3,
+      "config": "configs/final_experiments_training_NEW/train/no_cost__high__seed3.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__no_cost__high__3__1793930546215810800/model_step_786432.pt",
+        "step": 786432,
+        "kind": "periodic",
+        "sha256": "3bc4a27d554e309eb207519134ea02b517c6708165ebc1fa2a4c8ee5706bda0c"
+      }
+    },
+    {
+      "job_id": "no_cost__high__seed3__test_medium",
+      "method": "no_cost",
+      "training_budget": "high",
+      "test_budget": "medium",
+      "budget": 2710.8908500671387,
+      "training_seed": 3,
+      "config": "configs/final_experiments_training_NEW/train/no_cost__high__seed3.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__no_cost__high__3__1793930546215810800/model_step_786432.pt",
+        "step": 786432,
+        "kind": "periodic",
+        "sha256": "3bc4a27d554e309eb207519134ea02b517c6708165ebc1fa2a4c8ee5706bda0c"
+      }
+    },
+    {
+      "job_id": "no_cost__high__seed3__test_high",
+      "method": "no_cost",
+      "training_budget": "high",
+      "test_budget": "high",
+      "budget": 4322.566970825195,
+      "training_seed": 3,
+      "config": "configs/final_experiments_training_NEW/train/no_cost__high__seed3.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__no_cost__high__3__1793930546215810800/model_step_786432.pt",
+        "step": 786432,
+        "kind": "periodic",
+        "sha256": "3bc4a27d554e309eb207519134ea02b517c6708165ebc1fa2a4c8ee5706bda0c"
+      }
+    },
+    {
+      "job_id": "cost_mean__low__seed1__test_low",
+      "method": "cost_mean",
+      "training_budget": "low",
+      "test_budget": "low",
+      "budget": 1090.0049419403076,
+      "training_seed": 1,
+      "config": "configs/final_experiments_training_NEW/train/cost_mean__low__seed1.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_mean__low__1__1793938064948674400/model_step_1048576.pt",
+        "step": 1048576,
+        "kind": "periodic",
+        "sha256": "dcfdde28832e0610beb27dd160721a2d1b66174a583a10ca77022987f0e94f1a"
+      }
+    },
+    {
+      "job_id": "cost_mean__low__seed1__test_medium",
+      "method": "cost_mean",
+      "training_budget": "low",
+      "test_budget": "medium",
+      "budget": 2710.8908500671387,
+      "training_seed": 1,
+      "config": "configs/final_experiments_training_NEW/train/cost_mean__low__seed1.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_mean__low__1__1793938064948674400/model_step_1048576.pt",
+        "step": 1048576,
+        "kind": "periodic",
+        "sha256": "dcfdde28832e0610beb27dd160721a2d1b66174a583a10ca77022987f0e94f1a"
+      }
+    },
+    {
+      "job_id": "cost_mean__low__seed1__test_high",
+      "method": "cost_mean",
+      "training_budget": "low",
+      "test_budget": "high",
+      "budget": 4322.566970825195,
+      "training_seed": 1,
+      "config": "configs/final_experiments_training_NEW/train/cost_mean__low__seed1.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_mean__low__1__1793938064948674400/model_step_1048576.pt",
+        "step": 1048576,
+        "kind": "periodic",
+        "sha256": "dcfdde28832e0610beb27dd160721a2d1b66174a583a10ca77022987f0e94f1a"
+      }
+    },
+    {
+      "job_id": "cost_mean__low__seed2__test_low",
+      "method": "cost_mean",
+      "training_budget": "low",
+      "test_budget": "low",
+      "budget": 1090.0049419403076,
+      "training_seed": 2,
+      "config": "configs/final_experiments_training_NEW/train/cost_mean__low__seed2.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_mean__low__2__1793957046574712900/model_step_262144.pt",
+        "step": 262144,
+        "kind": "periodic",
+        "sha256": "f0ce3b23d00ac535b18a287b5e53c3d0bfbc802abaafb5f9a5e5f7fdc6d1980b"
+      }
+    },
+    {
+      "job_id": "cost_mean__low__seed2__test_medium",
+      "method": "cost_mean",
+      "training_budget": "low",
+      "test_budget": "medium",
+      "budget": 2710.8908500671387,
+      "training_seed": 2,
+      "config": "configs/final_experiments_training_NEW/train/cost_mean__low__seed2.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_mean__low__2__1793957046574712900/model_step_262144.pt",
+        "step": 262144,
+        "kind": "periodic",
+        "sha256": "f0ce3b23d00ac535b18a287b5e53c3d0bfbc802abaafb5f9a5e5f7fdc6d1980b"
+      }
+    },
+    {
+      "job_id": "cost_mean__low__seed2__test_high",
+      "method": "cost_mean",
+      "training_budget": "low",
+      "test_budget": "high",
+      "budget": 4322.566970825195,
+      "training_seed": 2,
+      "config": "configs/final_experiments_training_NEW/train/cost_mean__low__seed2.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_mean__low__2__1793957046574712900/model_step_262144.pt",
+        "step": 262144,
+        "kind": "periodic",
+        "sha256": "f0ce3b23d00ac535b18a287b5e53c3d0bfbc802abaafb5f9a5e5f7fdc6d1980b"
+      }
+    },
+    {
+      "job_id": "cost_mean__low__seed3__test_low",
+      "method": "cost_mean",
+      "training_budget": "low",
+      "test_budget": "low",
+      "budget": 1090.0049419403076,
+      "training_seed": 3,
+      "config": "configs/final_experiments_training_NEW/train/cost_mean__low__seed3.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_mean__low__3__1793976105260426000/model_step_262144.pt",
+        "step": 262144,
+        "kind": "periodic",
+        "sha256": "8be8408d39f212345ac990aa9337c3c450d739ed01121f5cf484fd08ae939eb9"
+      }
+    },
+    {
+      "job_id": "cost_mean__low__seed3__test_medium",
+      "method": "cost_mean",
+      "training_budget": "low",
+      "test_budget": "medium",
+      "budget": 2710.8908500671387,
+      "training_seed": 3,
+      "config": "configs/final_experiments_training_NEW/train/cost_mean__low__seed3.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_mean__low__3__1793976105260426000/model_step_262144.pt",
+        "step": 262144,
+        "kind": "periodic",
+        "sha256": "8be8408d39f212345ac990aa9337c3c450d739ed01121f5cf484fd08ae939eb9"
+      }
+    },
+    {
+      "job_id": "cost_mean__low__seed3__test_high",
+      "method": "cost_mean",
+      "training_budget": "low",
+      "test_budget": "high",
+      "budget": 4322.566970825195,
+      "training_seed": 3,
+      "config": "configs/final_experiments_training_NEW/train/cost_mean__low__seed3.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_mean__low__3__1793976105260426000/model_step_262144.pt",
+        "step": 262144,
+        "kind": "periodic",
+        "sha256": "8be8408d39f212345ac990aa9337c3c450d739ed01121f5cf484fd08ae939eb9"
+      }
+    },
+    {
+      "job_id": "cost_mean__medium__seed1__test_low",
+      "method": "cost_mean",
+      "training_budget": "medium",
+      "test_budget": "low",
+      "budget": 1090.0049419403076,
+      "training_seed": 1,
+      "config": "configs/final_experiments_training_NEW/train/cost_mean__medium__seed1.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_mean__medium__1__1793995198428083700/model_step_1048576.pt",
+        "step": 1048576,
+        "kind": "periodic",
+        "sha256": "c88e8b6280ceecec6914c97359cb4bcf495a8373823b15cf60367f579b7ab026"
+      }
+    },
+    {
+      "job_id": "cost_mean__medium__seed1__test_medium",
+      "method": "cost_mean",
+      "training_budget": "medium",
+      "test_budget": "medium",
+      "budget": 2710.8908500671387,
+      "training_seed": 1,
+      "config": "configs/final_experiments_training_NEW/train/cost_mean__medium__seed1.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_mean__medium__1__1793995198428083700/model_step_1048576.pt",
+        "step": 1048576,
+        "kind": "periodic",
+        "sha256": "c88e8b6280ceecec6914c97359cb4bcf495a8373823b15cf60367f579b7ab026"
+      }
+    },
+    {
+      "job_id": "cost_mean__medium__seed1__test_high",
+      "method": "cost_mean",
+      "training_budget": "medium",
+      "test_budget": "high",
+      "budget": 4322.566970825195,
+      "training_seed": 1,
+      "config": "configs/final_experiments_training_NEW/train/cost_mean__medium__seed1.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_mean__medium__1__1793995198428083700/model_step_1048576.pt",
+        "step": 1048576,
+        "kind": "periodic",
+        "sha256": "c88e8b6280ceecec6914c97359cb4bcf495a8373823b15cf60367f579b7ab026"
+      }
+    },
+    {
+      "job_id": "cost_mean__medium__seed2__test_low",
+      "method": "cost_mean",
+      "training_budget": "medium",
+      "test_budget": "low",
+      "budget": 1090.0049419403076,
+      "training_seed": 2,
+      "config": "configs/final_experiments_training_NEW/train/cost_mean__medium__seed2.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_mean__medium__2__1794006611659462100/model_step_262144.pt",
+        "step": 262144,
+        "kind": "periodic",
+        "sha256": "eaafb8fa7ae12ea1dd8ea97010860f2775bc687ffa0a135578985c2005a5f9a4"
+      }
+    },
+    {
+      "job_id": "cost_mean__medium__seed2__test_medium",
+      "method": "cost_mean",
+      "training_budget": "medium",
+      "test_budget": "medium",
+      "budget": 2710.8908500671387,
+      "training_seed": 2,
+      "config": "configs/final_experiments_training_NEW/train/cost_mean__medium__seed2.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_mean__medium__2__1794006611659462100/model_step_262144.pt",
+        "step": 262144,
+        "kind": "periodic",
+        "sha256": "eaafb8fa7ae12ea1dd8ea97010860f2775bc687ffa0a135578985c2005a5f9a4"
+      }
+    },
+    {
+      "job_id": "cost_mean__medium__seed2__test_high",
+      "method": "cost_mean",
+      "training_budget": "medium",
+      "test_budget": "high",
+      "budget": 4322.566970825195,
+      "training_seed": 2,
+      "config": "configs/final_experiments_training_NEW/train/cost_mean__medium__seed2.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_mean__medium__2__1794006611659462100/model_step_262144.pt",
+        "step": 262144,
+        "kind": "periodic",
+        "sha256": "eaafb8fa7ae12ea1dd8ea97010860f2775bc687ffa0a135578985c2005a5f9a4"
+      }
+    },
+    {
+      "job_id": "cost_mean__medium__seed3__test_low",
+      "method": "cost_mean",
+      "training_budget": "medium",
+      "test_budget": "low",
+      "budget": 1090.0049419403076,
+      "training_seed": 3,
+      "config": "configs/final_experiments_training_NEW/train/cost_mean__medium__seed3.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_mean__medium__3__1794018041314334400/model_step_262144.pt",
+        "step": 262144,
+        "kind": "periodic",
+        "sha256": "860aab5419034029ff582abd2ceab9d148da37064f4fa14fa20276f4b30f0310"
+      }
+    },
+    {
+      "job_id": "cost_mean__medium__seed3__test_medium",
+      "method": "cost_mean",
+      "training_budget": "medium",
+      "test_budget": "medium",
+      "budget": 2710.8908500671387,
+      "training_seed": 3,
+      "config": "configs/final_experiments_training_NEW/train/cost_mean__medium__seed3.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_mean__medium__3__1794018041314334400/model_step_262144.pt",
+        "step": 262144,
+        "kind": "periodic",
+        "sha256": "860aab5419034029ff582abd2ceab9d148da37064f4fa14fa20276f4b30f0310"
+      }
+    },
+    {
+      "job_id": "cost_mean__medium__seed3__test_high",
+      "method": "cost_mean",
+      "training_budget": "medium",
+      "test_budget": "high",
+      "budget": 4322.566970825195,
+      "training_seed": 3,
+      "config": "configs/final_experiments_training_NEW/train/cost_mean__medium__seed3.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_mean__medium__3__1794018041314334400/model_step_262144.pt",
+        "step": 262144,
+        "kind": "periodic",
+        "sha256": "860aab5419034029ff582abd2ceab9d148da37064f4fa14fa20276f4b30f0310"
+      }
+    },
+    {
+      "job_id": "cost_mean__high__seed1__test_low",
+      "method": "cost_mean",
+      "training_budget": "high",
+      "test_budget": "low",
+      "budget": 1090.0049419403076,
+      "training_seed": 1,
+      "config": "configs/final_experiments_training_NEW/train/cost_mean__high__seed1.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_mean__high__1__1794029491218224000/model_step_1048576.pt",
+        "step": 1048576,
+        "kind": "periodic",
+        "sha256": "fe8d306527bdda0c6840701930f6b234b3d31b231831ae2d1a7632ae4daf7649"
+      }
+    },
+    {
+      "job_id": "cost_mean__high__seed1__test_medium",
+      "method": "cost_mean",
+      "training_budget": "high",
+      "test_budget": "medium",
+      "budget": 2710.8908500671387,
+      "training_seed": 1,
+      "config": "configs/final_experiments_training_NEW/train/cost_mean__high__seed1.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_mean__high__1__1794029491218224000/model_step_1048576.pt",
+        "step": 1048576,
+        "kind": "periodic",
+        "sha256": "fe8d306527bdda0c6840701930f6b234b3d31b231831ae2d1a7632ae4daf7649"
+      }
+    },
+    {
+      "job_id": "cost_mean__high__seed1__test_high",
+      "method": "cost_mean",
+      "training_budget": "high",
+      "test_budget": "high",
+      "budget": 4322.566970825195,
+      "training_seed": 1,
+      "config": "configs/final_experiments_training_NEW/train/cost_mean__high__seed1.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_mean__high__1__1794029491218224000/model_step_1048576.pt",
+        "step": 1048576,
+        "kind": "periodic",
+        "sha256": "fe8d306527bdda0c6840701930f6b234b3d31b231831ae2d1a7632ae4daf7649"
+      }
+    },
+    {
+      "job_id": "cost_mean__high__seed2__test_low",
+      "method": "cost_mean",
+      "training_budget": "high",
+      "test_budget": "low",
+      "budget": 1090.0049419403076,
+      "training_seed": 2,
+      "config": "configs/final_experiments_training_NEW/train/cost_mean__high__seed2.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_mean__high__2__1794037791563645900/model_step_1048576.pt",
+        "step": 1048576,
+        "kind": "periodic",
+        "sha256": "adead9fc41b17da250d10fd9006e01d08e8c6aedc99998575161e1b07fab262d"
+      }
+    },
+    {
+      "job_id": "cost_mean__high__seed2__test_medium",
+      "method": "cost_mean",
+      "training_budget": "high",
+      "test_budget": "medium",
+      "budget": 2710.8908500671387,
+      "training_seed": 2,
+      "config": "configs/final_experiments_training_NEW/train/cost_mean__high__seed2.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_mean__high__2__1794037791563645900/model_step_1048576.pt",
+        "step": 1048576,
+        "kind": "periodic",
+        "sha256": "adead9fc41b17da250d10fd9006e01d08e8c6aedc99998575161e1b07fab262d"
+      }
+    },
+    {
+      "job_id": "cost_mean__high__seed2__test_high",
+      "method": "cost_mean",
+      "training_budget": "high",
+      "test_budget": "high",
+      "budget": 4322.566970825195,
+      "training_seed": 2,
+      "config": "configs/final_experiments_training_NEW/train/cost_mean__high__seed2.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_mean__high__2__1794037791563645900/model_step_1048576.pt",
+        "step": 1048576,
+        "kind": "periodic",
+        "sha256": "adead9fc41b17da250d10fd9006e01d08e8c6aedc99998575161e1b07fab262d"
+      }
+    },
+    {
+      "job_id": "cost_mean__high__seed3__test_low",
+      "method": "cost_mean",
+      "training_budget": "high",
+      "test_budget": "low",
+      "budget": 1090.0049419403076,
+      "training_seed": 3,
+      "config": "configs/final_experiments_training_NEW/train/cost_mean__high__seed3.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_mean__high__3__1794045999241798400/model_step_262144.pt",
+        "step": 262144,
+        "kind": "periodic",
+        "sha256": "a7bf08c0175e55f59aa7314519907ff260eae25f55d9172f445c91661f7645da"
+      }
+    },
+    {
+      "job_id": "cost_mean__high__seed3__test_medium",
+      "method": "cost_mean",
+      "training_budget": "high",
+      "test_budget": "medium",
+      "budget": 2710.8908500671387,
+      "training_seed": 3,
+      "config": "configs/final_experiments_training_NEW/train/cost_mean__high__seed3.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_mean__high__3__1794045999241798400/model_step_262144.pt",
+        "step": 262144,
+        "kind": "periodic",
+        "sha256": "a7bf08c0175e55f59aa7314519907ff260eae25f55d9172f445c91661f7645da"
+      }
+    },
+    {
+      "job_id": "cost_mean__high__seed3__test_high",
+      "method": "cost_mean",
+      "training_budget": "high",
+      "test_budget": "high",
+      "budget": 4322.566970825195,
+      "training_seed": 3,
+      "config": "configs/final_experiments_training_NEW/train/cost_mean__high__seed3.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_mean__high__3__1794045999241798400/model_step_262144.pt",
+        "step": 262144,
+        "kind": "periodic",
+        "sha256": "a7bf08c0175e55f59aa7314519907ff260eae25f55d9172f445c91661f7645da"
+      }
+    },
+    {
+      "job_id": "cost_uncertainty__low__seed1__test_low",
+      "method": "cost_uncertainty",
+      "training_budget": "low",
+      "test_budget": "low",
+      "budget": 1090.0049419403076,
+      "training_seed": 1,
+      "config": "configs/final_experiments_training_NEW/train/cost_uncertainty__low__seed1.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_uncertainty__low__1__1794054313254991000/model_step_1048576.pt",
+        "step": 1048576,
+        "kind": "periodic",
+        "sha256": "95a90a377311ea79ed9eea96cc623794aa97c10cb9abc3ad23008c04f22a31d9"
+      }
+    },
+    {
+      "job_id": "cost_uncertainty__low__seed1__test_medium",
+      "method": "cost_uncertainty",
+      "training_budget": "low",
+      "test_budget": "medium",
+      "budget": 2710.8908500671387,
+      "training_seed": 1,
+      "config": "configs/final_experiments_training_NEW/train/cost_uncertainty__low__seed1.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_uncertainty__low__1__1794054313254991000/model_step_1048576.pt",
+        "step": 1048576,
+        "kind": "periodic",
+        "sha256": "95a90a377311ea79ed9eea96cc623794aa97c10cb9abc3ad23008c04f22a31d9"
+      }
+    },
+    {
+      "job_id": "cost_uncertainty__low__seed1__test_high",
+      "method": "cost_uncertainty",
+      "training_budget": "low",
+      "test_budget": "high",
+      "budget": 4322.566970825195,
+      "training_seed": 1,
+      "config": "configs/final_experiments_training_NEW/train/cost_uncertainty__low__seed1.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_uncertainty__low__1__1794054313254991000/model_step_1048576.pt",
+        "step": 1048576,
+        "kind": "periodic",
+        "sha256": "95a90a377311ea79ed9eea96cc623794aa97c10cb9abc3ad23008c04f22a31d9"
+      }
+    },
+    {
+      "job_id": "cost_uncertainty__low__seed2__test_low",
+      "method": "cost_uncertainty",
+      "training_budget": "low",
+      "test_budget": "low",
+      "budget": 1090.0049419403076,
+      "training_seed": 2,
+      "config": "configs/final_experiments_training_NEW/train/cost_uncertainty__low__seed2.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_uncertainty__low__2__1794073398331072200/model_step_524288.pt",
+        "step": 524288,
+        "kind": "periodic",
+        "sha256": "b5afbaa8504ad37db8404fe1a635566311c59039338a0cc5a5666c63a03f73c8"
+      }
+    },
+    {
+      "job_id": "cost_uncertainty__low__seed2__test_medium",
+      "method": "cost_uncertainty",
+      "training_budget": "low",
+      "test_budget": "medium",
+      "budget": 2710.8908500671387,
+      "training_seed": 2,
+      "config": "configs/final_experiments_training_NEW/train/cost_uncertainty__low__seed2.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_uncertainty__low__2__1794073398331072200/model_step_524288.pt",
+        "step": 524288,
+        "kind": "periodic",
+        "sha256": "b5afbaa8504ad37db8404fe1a635566311c59039338a0cc5a5666c63a03f73c8"
+      }
+    },
+    {
+      "job_id": "cost_uncertainty__low__seed2__test_high",
+      "method": "cost_uncertainty",
+      "training_budget": "low",
+      "test_budget": "high",
+      "budget": 4322.566970825195,
+      "training_seed": 2,
+      "config": "configs/final_experiments_training_NEW/train/cost_uncertainty__low__seed2.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_uncertainty__low__2__1794073398331072200/model_step_524288.pt",
+        "step": 524288,
+        "kind": "periodic",
+        "sha256": "b5afbaa8504ad37db8404fe1a635566311c59039338a0cc5a5666c63a03f73c8"
+      }
+    },
+    {
+      "job_id": "cost_uncertainty__low__seed3__test_low",
+      "method": "cost_uncertainty",
+      "training_budget": "low",
+      "test_budget": "low",
+      "budget": 1090.0049419403076,
+      "training_seed": 3,
+      "config": "configs/final_experiments_training_NEW/train/cost_uncertainty__low__seed3.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_uncertainty__low__3__1794092483793605500/model_step_524288.pt",
+        "step": 524288,
+        "kind": "periodic",
+        "sha256": "e101125313f4a0fd1ce486789fc31d5ae5ccdd238dc3720a8d049ac173ca1a22"
+      }
+    },
+    {
+      "job_id": "cost_uncertainty__low__seed3__test_medium",
+      "method": "cost_uncertainty",
+      "training_budget": "low",
+      "test_budget": "medium",
+      "budget": 2710.8908500671387,
+      "training_seed": 3,
+      "config": "configs/final_experiments_training_NEW/train/cost_uncertainty__low__seed3.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_uncertainty__low__3__1794092483793605500/model_step_524288.pt",
+        "step": 524288,
+        "kind": "periodic",
+        "sha256": "e101125313f4a0fd1ce486789fc31d5ae5ccdd238dc3720a8d049ac173ca1a22"
+      }
+    },
+    {
+      "job_id": "cost_uncertainty__low__seed3__test_high",
+      "method": "cost_uncertainty",
+      "training_budget": "low",
+      "test_budget": "high",
+      "budget": 4322.566970825195,
+      "training_seed": 3,
+      "config": "configs/final_experiments_training_NEW/train/cost_uncertainty__low__seed3.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_uncertainty__low__3__1794092483793605500/model_step_524288.pt",
+        "step": 524288,
+        "kind": "periodic",
+        "sha256": "e101125313f4a0fd1ce486789fc31d5ae5ccdd238dc3720a8d049ac173ca1a22"
+      }
+    },
+    {
+      "job_id": "cost_uncertainty__medium__seed1__test_low",
+      "method": "cost_uncertainty",
+      "training_budget": "medium",
+      "test_budget": "low",
+      "budget": 1090.0049419403076,
+      "training_seed": 1,
+      "config": "configs/final_experiments_training_NEW/train/cost_uncertainty__medium__seed1.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_uncertainty__medium__1__1794111682973864300/model_step_1048576.pt",
+        "step": 1048576,
+        "kind": "periodic",
+        "sha256": "0ab8b5e0d587f1181a854b7e34bccf09055dce86d4b33d5729d0b722455f3088"
+      }
+    },
+    {
+      "job_id": "cost_uncertainty__medium__seed1__test_medium",
+      "method": "cost_uncertainty",
+      "training_budget": "medium",
+      "test_budget": "medium",
+      "budget": 2710.8908500671387,
+      "training_seed": 1,
+      "config": "configs/final_experiments_training_NEW/train/cost_uncertainty__medium__seed1.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_uncertainty__medium__1__1794111682973864300/model_step_1048576.pt",
+        "step": 1048576,
+        "kind": "periodic",
+        "sha256": "0ab8b5e0d587f1181a854b7e34bccf09055dce86d4b33d5729d0b722455f3088"
+      }
+    },
+    {
+      "job_id": "cost_uncertainty__medium__seed1__test_high",
+      "method": "cost_uncertainty",
+      "training_budget": "medium",
+      "test_budget": "high",
+      "budget": 4322.566970825195,
+      "training_seed": 1,
+      "config": "configs/final_experiments_training_NEW/train/cost_uncertainty__medium__seed1.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_uncertainty__medium__1__1794111682973864300/model_step_1048576.pt",
+        "step": 1048576,
+        "kind": "periodic",
+        "sha256": "0ab8b5e0d587f1181a854b7e34bccf09055dce86d4b33d5729d0b722455f3088"
+      }
+    },
+    {
+      "job_id": "cost_uncertainty__medium__seed2__test_low",
+      "method": "cost_uncertainty",
+      "training_budget": "medium",
+      "test_budget": "low",
+      "budget": 1090.0049419403076,
+      "training_seed": 2,
+      "config": "configs/final_experiments_training_NEW/train/cost_uncertainty__medium__seed2.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_uncertainty__medium__2__1794123084479341800/model_step_262144.pt",
+        "step": 262144,
+        "kind": "periodic",
+        "sha256": "631d50d24d6afa8d5d4f1e26eb0f2a1083fbbd19a3d7264b2f56eb0122eb7418"
+      }
+    },
+    {
+      "job_id": "cost_uncertainty__medium__seed2__test_medium",
+      "method": "cost_uncertainty",
+      "training_budget": "medium",
+      "test_budget": "medium",
+      "budget": 2710.8908500671387,
+      "training_seed": 2,
+      "config": "configs/final_experiments_training_NEW/train/cost_uncertainty__medium__seed2.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_uncertainty__medium__2__1794123084479341800/model_step_262144.pt",
+        "step": 262144,
+        "kind": "periodic",
+        "sha256": "631d50d24d6afa8d5d4f1e26eb0f2a1083fbbd19a3d7264b2f56eb0122eb7418"
+      }
+    },
+    {
+      "job_id": "cost_uncertainty__medium__seed2__test_high",
+      "method": "cost_uncertainty",
+      "training_budget": "medium",
+      "test_budget": "high",
+      "budget": 4322.566970825195,
+      "training_seed": 2,
+      "config": "configs/final_experiments_training_NEW/train/cost_uncertainty__medium__seed2.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_uncertainty__medium__2__1794123084479341800/model_step_262144.pt",
+        "step": 262144,
+        "kind": "periodic",
+        "sha256": "631d50d24d6afa8d5d4f1e26eb0f2a1083fbbd19a3d7264b2f56eb0122eb7418"
+      }
+    },
+    {
+      "job_id": "cost_uncertainty__medium__seed3__test_low",
+      "method": "cost_uncertainty",
+      "training_budget": "medium",
+      "test_budget": "low",
+      "budget": 1090.0049419403076,
+      "training_seed": 3,
+      "config": "configs/final_experiments_training_NEW/train/cost_uncertainty__medium__seed3.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_uncertainty__medium__3__1794134504250129200/model_step_262144.pt",
+        "step": 262144,
+        "kind": "periodic",
+        "sha256": "0aab8711b676dda5a6cfed6bf6daf386b460c4ffb5e684ff43b6eefd46f39aa2"
+      }
+    },
+    {
+      "job_id": "cost_uncertainty__medium__seed3__test_medium",
+      "method": "cost_uncertainty",
+      "training_budget": "medium",
+      "test_budget": "medium",
+      "budget": 2710.8908500671387,
+      "training_seed": 3,
+      "config": "configs/final_experiments_training_NEW/train/cost_uncertainty__medium__seed3.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_uncertainty__medium__3__1794134504250129200/model_step_262144.pt",
+        "step": 262144,
+        "kind": "periodic",
+        "sha256": "0aab8711b676dda5a6cfed6bf6daf386b460c4ffb5e684ff43b6eefd46f39aa2"
+      }
+    },
+    {
+      "job_id": "cost_uncertainty__medium__seed3__test_high",
+      "method": "cost_uncertainty",
+      "training_budget": "medium",
+      "test_budget": "high",
+      "budget": 4322.566970825195,
+      "training_seed": 3,
+      "config": "configs/final_experiments_training_NEW/train/cost_uncertainty__medium__seed3.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_uncertainty__medium__3__1794134504250129200/model_step_262144.pt",
+        "step": 262144,
+        "kind": "periodic",
+        "sha256": "0aab8711b676dda5a6cfed6bf6daf386b460c4ffb5e684ff43b6eefd46f39aa2"
+      }
+    },
+    {
+      "job_id": "cost_uncertainty__high__seed1__test_low",
+      "method": "cost_uncertainty",
+      "training_budget": "high",
+      "test_budget": "low",
+      "budget": 1090.0049419403076,
+      "training_seed": 1,
+      "config": "configs/final_experiments_training_NEW/train/cost_uncertainty__high__seed1.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_uncertainty__high__1__1794146002557533400/model_step_1048576.pt",
+        "step": 1048576,
+        "kind": "periodic",
+        "sha256": "e711a56a56b6110dbcfb676a2f54675468454ad87b4c51516c433524635a4a74"
+      }
+    },
+    {
+      "job_id": "cost_uncertainty__high__seed1__test_medium",
+      "method": "cost_uncertainty",
+      "training_budget": "high",
+      "test_budget": "medium",
+      "budget": 2710.8908500671387,
+      "training_seed": 1,
+      "config": "configs/final_experiments_training_NEW/train/cost_uncertainty__high__seed1.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_uncertainty__high__1__1794146002557533400/model_step_1048576.pt",
+        "step": 1048576,
+        "kind": "periodic",
+        "sha256": "e711a56a56b6110dbcfb676a2f54675468454ad87b4c51516c433524635a4a74"
+      }
+    },
+    {
+      "job_id": "cost_uncertainty__high__seed1__test_high",
+      "method": "cost_uncertainty",
+      "training_budget": "high",
+      "test_budget": "high",
+      "budget": 4322.566970825195,
+      "training_seed": 1,
+      "config": "configs/final_experiments_training_NEW/train/cost_uncertainty__high__seed1.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_uncertainty__high__1__1794146002557533400/model_step_1048576.pt",
+        "step": 1048576,
+        "kind": "periodic",
+        "sha256": "e711a56a56b6110dbcfb676a2f54675468454ad87b4c51516c433524635a4a74"
+      }
+    },
+    {
+      "job_id": "cost_uncertainty__high__seed2__test_low",
+      "method": "cost_uncertainty",
+      "training_budget": "high",
+      "test_budget": "low",
+      "budget": 1090.0049419403076,
+      "training_seed": 2,
+      "config": "configs/final_experiments_training_NEW/train/cost_uncertainty__high__seed2.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_uncertainty__high__2__1794154314064059700/model_step_1048576.pt",
+        "step": 1048576,
+        "kind": "periodic",
+        "sha256": "993953570225703366b86c721a1d8a8ae8ab4068f19e42ea5e0189f24577caa6"
+      }
+    },
+    {
+      "job_id": "cost_uncertainty__high__seed2__test_medium",
+      "method": "cost_uncertainty",
+      "training_budget": "high",
+      "test_budget": "medium",
+      "budget": 2710.8908500671387,
+      "training_seed": 2,
+      "config": "configs/final_experiments_training_NEW/train/cost_uncertainty__high__seed2.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_uncertainty__high__2__1794154314064059700/model_step_1048576.pt",
+        "step": 1048576,
+        "kind": "periodic",
+        "sha256": "993953570225703366b86c721a1d8a8ae8ab4068f19e42ea5e0189f24577caa6"
+      }
+    },
+    {
+      "job_id": "cost_uncertainty__high__seed2__test_high",
+      "method": "cost_uncertainty",
+      "training_budget": "high",
+      "test_budget": "high",
+      "budget": 4322.566970825195,
+      "training_seed": 2,
+      "config": "configs/final_experiments_training_NEW/train/cost_uncertainty__high__seed2.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_uncertainty__high__2__1794154314064059700/model_step_1048576.pt",
+        "step": 1048576,
+        "kind": "periodic",
+        "sha256": "993953570225703366b86c721a1d8a8ae8ab4068f19e42ea5e0189f24577caa6"
+      }
+    },
+    {
+      "job_id": "cost_uncertainty__high__seed3__test_low",
+      "method": "cost_uncertainty",
+      "training_budget": "high",
+      "test_budget": "low",
+      "budget": 1090.0049419403076,
+      "training_seed": 3,
+      "config": "configs/final_experiments_training_NEW/train/cost_uncertainty__high__seed3.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_uncertainty__high__3__1794162547552741300/model_step_786432.pt",
+        "step": 786432,
+        "kind": "periodic",
+        "sha256": "9f2d4aca5b83615d8a24568a093eb72aff6ff31e6d2ad13467721f1df9eeee44"
+      }
+    },
+    {
+      "job_id": "cost_uncertainty__high__seed3__test_medium",
+      "method": "cost_uncertainty",
+      "training_budget": "high",
+      "test_budget": "medium",
+      "budget": 2710.8908500671387,
+      "training_seed": 3,
+      "config": "configs/final_experiments_training_NEW/train/cost_uncertainty__high__seed3.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_uncertainty__high__3__1794162547552741300/model_step_786432.pt",
+        "step": 786432,
+        "kind": "periodic",
+        "sha256": "9f2d4aca5b83615d8a24568a093eb72aff6ff31e6d2ad13467721f1df9eeee44"
+      }
+    },
+    {
+      "job_id": "cost_uncertainty__high__seed3__test_high",
+      "method": "cost_uncertainty",
+      "training_budget": "high",
+      "test_budget": "high",
+      "budget": 4322.566970825195,
+      "training_seed": 3,
+      "config": "configs/final_experiments_training_NEW/train/cost_uncertainty__high__seed3.json",
+      "checkpoint": {
+        "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_uncertainty__high__3__1794162547552741300/model_step_786432.pt",
+        "step": 786432,
+        "kind": "periodic",
+        "sha256": "9f2d4aca5b83615d8a24568a093eb72aff6ff31e6d2ad13467721f1df9eeee44"
+      }
+    },
+    {
+      "job_id": "random__test_low",
+      "method": "random",
+      "training_budget": "none",
+      "test_budget": "low",
+      "budget": 1090.0049419403076,
+      "training_seed": "",
+      "config": "results\\final_testing_NEW\\baseline_config.json",
+      "checkpoint": null
+    },
+    {
+      "job_id": "random__test_medium",
+      "method": "random",
+      "training_budget": "none",
+      "test_budget": "medium",
+      "budget": 2710.8908500671387,
+      "training_seed": "",
+      "config": "results\\final_testing_NEW\\baseline_config.json",
+      "checkpoint": null
+    },
+    {
+      "job_id": "random__test_high",
+      "method": "random",
+      "training_budget": "none",
+      "test_budget": "high",
+      "budget": 4322.566970825195,
+      "training_seed": "",
+      "config": "results\\final_testing_NEW\\baseline_config.json",
+      "checkpoint": null
+    },
+    {
+      "job_id": "ei__test_low",
+      "method": "ei",
+      "training_budget": "none",
+      "test_budget": "low",
+      "budget": 1090.0049419403076,
+      "training_seed": "",
+      "config": "results\\final_testing_NEW\\baseline_config.json",
+      "checkpoint": null
+    },
+    {
+      "job_id": "ei__test_medium",
+      "method": "ei",
+      "training_budget": "none",
+      "test_budget": "medium",
+      "budget": 2710.8908500671387,
+      "training_seed": "",
+      "config": "results\\final_testing_NEW\\baseline_config.json",
+      "checkpoint": null
+    },
+    {
+      "job_id": "ei__test_high",
+      "method": "ei",
+      "training_budget": "none",
+      "test_budget": "high",
+      "budget": 4322.566970825195,
+      "training_seed": "",
+      "config": "results\\final_testing_NEW\\baseline_config.json",
+      "checkpoint": null
+    },
+    {
+      "job_id": "eipu__test_low",
+      "method": "eipu",
+      "training_budget": "none",
+      "test_budget": "low",
+      "budget": 1090.0049419403076,
+      "training_seed": "",
+      "config": "results\\final_testing_NEW\\baseline_config.json",
+      "checkpoint": null
+    },
+    {
+      "job_id": "eipu__test_medium",
+      "method": "eipu",
+      "training_budget": "none",
+      "test_budget": "medium",
+      "budget": 2710.8908500671387,
+      "training_seed": "",
+      "config": "results\\final_testing_NEW\\baseline_config.json",
+      "checkpoint": null
+    },
+    {
+      "job_id": "eipu__test_high",
+      "method": "eipu",
+      "training_budget": "none",
+      "test_budget": "high",
+      "budget": 4322.566970825195,
+      "training_seed": "",
+      "config": "results\\final_testing_NEW\\baseline_config.json",
+      "checkpoint": null
+    },
+    {
+      "job_id": "ei_cool__test_low",
+      "method": "ei_cool",
+      "training_budget": "none",
+      "test_budget": "low",
+      "budget": 1090.0049419403076,
+      "training_seed": "",
+      "config": "results\\final_testing_NEW\\baseline_config.json",
+      "checkpoint": null
+    },
+    {
+      "job_id": "ei_cool__test_medium",
+      "method": "ei_cool",
+      "training_budget": "none",
+      "test_budget": "medium",
+      "budget": 2710.8908500671387,
+      "training_seed": "",
+      "config": "results\\final_testing_NEW\\baseline_config.json",
+      "checkpoint": null
+    },
+    {
+      "job_id": "ei_cool__test_high",
+      "method": "ei_cool",
+      "training_budget": "none",
+      "test_budget": "high",
+      "budget": 4322.566970825195,
+      "training_seed": "",
+      "config": "results\\final_testing_NEW\\baseline_config.json",
+      "checkpoint": null
+    }
+  ],
+  "inputs": {
+    "results\\final_training_NEW\\selected_checkpoints.json": "c544558d8803296e4c0809f758293620cc15726c9e6791e5bc885b3c8cf4f1da",
+    "results\\final_testing_NEW\\baseline_config.json": "4764f1727dd2f0e6c6853da243356a5e23aca0e3a39f8779abf2e0c0042ab7bb",
+    "configs/final_experiments_training_NEW/train/no_cost__low__seed1.json": "c13420cd8fdf58a7bbc8f0c166ad700cb3abc2df40f47a010c8445520a43a13c",
+    "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__no_cost__low__1__1793827761514942900/model_step_1048576.pt": "c769a69119be77f6ad3177d9bd7d7ca9aefb0b27a90aa2cdb5b240c6aeaabda8",
+    "configs/final_experiments_training_NEW/train/no_cost__low__seed2.json": "3a09b7aac7125fe6bbf02a0348d77962e99c57d7d173590016342c4b235caff9",
+    "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__no_cost__low__2__1793846307473004900/model_step_1048576.pt": "5af05d3bb1e4c17a4fbcfb2e0952450ae3499c9b491734f1d62b59848b7eadd8",
+    "configs/final_experiments_training_NEW/train/no_cost__low__seed3.json": "9e31f7399b6b3413474bf5ddf53cae182578a0a88947265ddfae545ca192c043",
+    "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__no_cost__low__3__1793864897494559600/model_step_524288.pt": "cd48bd75750e5425f7ccfa908769e28d223d9e5b31621b581ce29bb13c1b4ab3",
+    "configs/final_experiments_training_NEW/train/no_cost__medium__seed1.json": "6fd6040c5f6314323cf77cacba78beb8a6c11679eff4e5fe2204cbb089dc9046",
+    "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__no_cost__medium__1__1793883500683973800/model_step_1048576.pt": "2e778c2a8fe4018ff4cb407b203a70dc8df56853e4220b0cbbe8039740012dca",
+    "configs/final_experiments_training_NEW/train/no_cost__medium__seed2.json": "58711fa48591875a12e0417245b15362c6325f4e5a81e5c767da3c5112e4a574",
+    "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__no_cost__medium__2__1793894173416922100/model_step_1048576.pt": "76606ed51e7f69f691bae5f2a00c202b7b0d5551d69f988bb072828f93ce7833",
+    "configs/final_experiments_training_NEW/train/no_cost__medium__seed3.json": "9ab04cbc494ff3c18485041338b9dabbd3f531ff7f83053f3023e033aa5f8693",
+    "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__no_cost__medium__3__1793904811050009100/model_step_1048576.pt": "b66fd2874dcb075d32dcf8812267fa19f09b5472856dccb13950d8b933887016",
+    "configs/final_experiments_training_NEW/train/no_cost__high__seed1.json": "9eb8fe850ae08ea612c1ddbcf731123ba08cce23801ee233a10223165530ed27",
+    "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__no_cost__high__1__1793915522884666000/model_step_1048576.pt": "6b665d57ecf3c56fd199e5766437ecea4aa90e454deea70662340dd6a98086c1",
+    "configs/final_experiments_training_NEW/train/no_cost__high__seed2.json": "726987af2b1ae03b2e789c80dc7fcbd2f278180f912ae8b3c4dcb58fff7cc202",
+    "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__no_cost__high__2__1793923054596499000/model_step_1048576.pt": "985eeba4fa7f75311f8a14b3b6031acce3a847436575ce40352cef2bd42b6984",
+    "configs/final_experiments_training_NEW/train/no_cost__high__seed3.json": "8d9b46128dcf5c20e8e7de3bb55b771810b463700820d8f37fd3a90793dbbcc8",
+    "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__no_cost__high__3__1793930546215810800/model_step_786432.pt": "3bc4a27d554e309eb207519134ea02b517c6708165ebc1fa2a4c8ee5706bda0c",
+    "configs/final_experiments_training_NEW/train/cost_mean__low__seed1.json": "066ce9a7c0c3160b605a6799a1fb7f7d4f8b6ef47a22c31ca0839712b73bd57e",
+    "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_mean__low__1__1793938064948674400/model_step_1048576.pt": "dcfdde28832e0610beb27dd160721a2d1b66174a583a10ca77022987f0e94f1a",
+    "configs/final_experiments_training_NEW/train/cost_mean__low__seed2.json": "9fca418d1243708da2cb1ab82ab694dedabda8a738a76b774c47592bd0c607d5",
+    "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_mean__low__2__1793957046574712900/model_step_262144.pt": "f0ce3b23d00ac535b18a287b5e53c3d0bfbc802abaafb5f9a5e5f7fdc6d1980b",
+    "configs/final_experiments_training_NEW/train/cost_mean__low__seed3.json": "c6926fa8f9c3a3ff6fce040b59d5fe51828e6e5c9fc39e6f4ed4ce0751e2b6d0",
+    "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_mean__low__3__1793976105260426000/model_step_262144.pt": "8be8408d39f212345ac990aa9337c3c450d739ed01121f5cf484fd08ae939eb9",
+    "configs/final_experiments_training_NEW/train/cost_mean__medium__seed1.json": "a2c484bc75a628a113ce41513878faee2936f9417cb488d5fd136b2dbda7162d",
+    "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_mean__medium__1__1793995198428083700/model_step_1048576.pt": "c88e8b6280ceecec6914c97359cb4bcf495a8373823b15cf60367f579b7ab026",
+    "configs/final_experiments_training_NEW/train/cost_mean__medium__seed2.json": "5f36bed406fefc4281ac4e25fe4cb4366600d882e6048cc92d94ab740a387fd7",
+    "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_mean__medium__2__1794006611659462100/model_step_262144.pt": "eaafb8fa7ae12ea1dd8ea97010860f2775bc687ffa0a135578985c2005a5f9a4",
+    "configs/final_experiments_training_NEW/train/cost_mean__medium__seed3.json": "0602fee956040a620e788068fdd108895349fdfb82a85579d78051a4a10307d6",
+    "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_mean__medium__3__1794018041314334400/model_step_262144.pt": "860aab5419034029ff582abd2ceab9d148da37064f4fa14fa20276f4b30f0310",
+    "configs/final_experiments_training_NEW/train/cost_mean__high__seed1.json": "e2f66c75f7f6419dd16a33fc86d02c40e08b19df29a4bbab429843c2b48acf20",
+    "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_mean__high__1__1794029491218224000/model_step_1048576.pt": "fe8d306527bdda0c6840701930f6b234b3d31b231831ae2d1a7632ae4daf7649",
+    "configs/final_experiments_training_NEW/train/cost_mean__high__seed2.json": "8e5ab095b1136b849429d24e544022098bc326ee15cfae488df20ddb6629f066",
+    "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_mean__high__2__1794037791563645900/model_step_1048576.pt": "adead9fc41b17da250d10fd9006e01d08e8c6aedc99998575161e1b07fab262d",
+    "configs/final_experiments_training_NEW/train/cost_mean__high__seed3.json": "3994e6dc43e801d09e2fbf3b722305bc3b56d870ee842021f3c1860cd9f4bccd",
+    "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_mean__high__3__1794045999241798400/model_step_262144.pt": "a7bf08c0175e55f59aa7314519907ff260eae25f55d9172f445c91661f7645da",
+    "configs/final_experiments_training_NEW/train/cost_uncertainty__low__seed1.json": "988416c65bf56736643a3e49745c33c4b81e4fdfc7422916b63129e483c62c2c",
+    "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_uncertainty__low__1__1794054313254991000/model_step_1048576.pt": "95a90a377311ea79ed9eea96cc623794aa97c10cb9abc3ad23008c04f22a31d9",
+    "configs/final_experiments_training_NEW/train/cost_uncertainty__low__seed2.json": "d15175f7984630cd1704260ce8bcc00c748db5a37c8b0bc2e525f4ff599a285e",
+    "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_uncertainty__low__2__1794073398331072200/model_step_524288.pt": "b5afbaa8504ad37db8404fe1a635566311c59039338a0cc5a5666c63a03f73c8",
+    "configs/final_experiments_training_NEW/train/cost_uncertainty__low__seed3.json": "6fa67ba298e9b5e80878d1e5534056ee73c918c6dff19afed39ac9bc3a154259",
+    "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_uncertainty__low__3__1794092483793605500/model_step_524288.pt": "e101125313f4a0fd1ce486789fc31d5ae5ccdd238dc3720a8d049ac173ca1a22",
+    "configs/final_experiments_training_NEW/train/cost_uncertainty__medium__seed1.json": "531e55b0b38a8c54e23b0c87c60be963cf04ca3f7d0170a91216a28567905372",
+    "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_uncertainty__medium__1__1794111682973864300/model_step_1048576.pt": "0ab8b5e0d587f1181a854b7e34bccf09055dce86d4b33d5729d0b722455f3088",
+    "configs/final_experiments_training_NEW/train/cost_uncertainty__medium__seed2.json": "f02812b38712f9b1f84c99ab15095fcda66d1cdf4f9c451b7540f7f8b7d0d347",
+    "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_uncertainty__medium__2__1794123084479341800/model_step_262144.pt": "631d50d24d6afa8d5d4f1e26eb0f2a1083fbbd19a3d7264b2f56eb0122eb7418",
+    "configs/final_experiments_training_NEW/train/cost_uncertainty__medium__seed3.json": "5070a2ecb90a7cadd5e0ebf12845a8ebe2d6491d68427f91d2199bf4a012b323",
+    "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_uncertainty__medium__3__1794134504250129200/model_step_262144.pt": "0aab8711b676dda5a6cfed6bf6daf386b460c4ffb5e684ff43b6eefd46f39aa2",
+    "configs/final_experiments_training_NEW/train/cost_uncertainty__high__seed1.json": "b9cfdbb7464c808ade9acb1bd8a989dba227162856e8f6eb3fdbb8e6bd9a9236",
+    "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_uncertainty__high__1__1794146002557533400/model_step_1048576.pt": "e711a56a56b6110dbcfb676a2f54675468454ad87b4c51516c433524635a4a74",
+    "configs/final_experiments_training_NEW/train/cost_uncertainty__high__seed2.json": "5eb5a6086f5ceed74e17445fecd08631033279278f208550bdb89d76dd8be4e8",
+    "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_uncertainty__high__2__1794154314064059700/model_step_1048576.pt": "993953570225703366b86c721a1d8a8ae8ab4068f19e42ea5e0189f24577caa6",
+    "configs/final_experiments_training_NEW/train/cost_uncertainty__high__seed3.json": "9487cbd3fbc03b7310eb518def9399fefe41ca682f0ba3fe829cec304b2de070",
+    "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_uncertainty__high__3__1794162547552741300/model_step_786432.pt": "9f2d4aca5b83615d8a24568a093eb72aff6ff31e6d2ad13467721f1df9eeee44"
+  },
+  "training_protocol": "configs/final_experiments_training_NEW/protocol.json",
+  "training_protocol_sha256": "f7211b77a0417c9ab258d70e9eb1473e495f710b52b926e564fe947445153c22",
+  "source_hashes": {
+    "scripts/TEST_AGENT_NEW.py": "b3c342f7985ee90843e9f541ba93092448321956845ba4ba68ae1374448228da"
+  },
+  "success_threshold": 0.01,
+  "protocol_sha256": "5b17cbd8817ddcf6e95ee65e24ea51b5dbbdd25383432900e35dcb4d60497b37"
+}

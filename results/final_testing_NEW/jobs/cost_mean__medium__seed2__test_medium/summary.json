@@ -1,0 +1,23 @@
+{
+  "protocol_sha256": "5b17cbd8817ddcf6e95ee65e24ea51b5dbbdd25383432900e35dcb4d60497b37",
+  "job": {
+    "job_id": "cost_mean__medium__seed2__test_medium",
+    "method": "cost_mean",
+    "training_budget": "medium",
+    "test_budget": "medium",
+    "budget": 2710.8908500671387,
+    "training_seed": 2,
+    "config": "configs/final_experiments_training_NEW/train/cost_mean__medium__seed2.json",
+    "checkpoint": {
+      "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__cost_mean__medium__2__1794006611659462100/model_step_262144.pt",
+      "step": 262144,
+      "kind": "periodic",
+      "sha256": "eaafb8fa7ae12ea1dd8ea97010860f2775bc687ffa0a135578985c2005a5f9a4"
+    }
+  },
+  "episode_bank_sha256": "63d5a258822a3e2bf60ae97bd487c11a95721ca1e1d340361ed6ca39fa0a8f61",
+  "episodes_csv": "results\\final_testing_NEW\\jobs\\cost_mean__medium__seed2__test_medium\\episodes.csv",
+  "episodes_sha256": "da8494a5a31f4043613c6190be39563bebd3bbe81ec31d0fc57d3972027a620d",
+  "n_episodes": 768,
+  "worker_seconds": 82.90662220000013
+}

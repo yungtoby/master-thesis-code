@@ -1,0 +1,18 @@
+{
+  "protocol_sha256": "5b17cbd8817ddcf6e95ee65e24ea51b5dbbdd25383432900e35dcb4d60497b37",
+  "job": {
+    "job_id": "eipu__test_medium",
+    "method": "eipu",
+    "training_budget": "none",
+    "test_budget": "medium",
+    "budget": 2710.8908500671387,
+    "training_seed": "",
+    "config": "results\\final_testing_NEW\\baseline_config.json",
+    "checkpoint": null
+  },
+  "episode_bank_sha256": "63d5a258822a3e2bf60ae97bd487c11a95721ca1e1d340361ed6ca39fa0a8f61",
+  "episodes_csv": "results\\final_testing_NEW\\jobs\\eipu__test_medium\\episodes.csv",
+  "episodes_sha256": "c1489350e05dd40079fbfef618c0692d9379624cc4ac4b691fa0320d24971592",
+  "n_episodes": 768,
+  "worker_seconds": 88.36185259999911
+}

@@ -1,0 +1,23 @@
+{
+  "protocol_sha256": "5b17cbd8817ddcf6e95ee65e24ea51b5dbbdd25383432900e35dcb4d60497b37",
+  "job": {
+    "job_id": "no_cost__low__seed2__test_high",
+    "method": "no_cost",
+    "training_budget": "low",
+    "test_budget": "high",
+    "budget": 4322.566970825195,
+    "training_seed": 2,
+    "config": "configs/final_experiments_training_NEW/train/no_cost__low__seed2.json",
+    "checkpoint": {
+      "path": "checkpoints/final_training_NEW/train/CostAwareBO-YAHPO-LCBench__phase4_NEW_train__no_cost__low__2__1793846307473004900/model_step_1048576.pt",
+      "step": 1048576,
+      "kind": "periodic",
+      "sha256": "5af05d3bb1e4c17a4fbcfb2e0952450ae3499c9b491734f1d62b59848b7eadd8"
+    }
+  },
+  "episode_bank_sha256": "63d5a258822a3e2bf60ae97bd487c11a95721ca1e1d340361ed6ca39fa0a8f61",
+  "episodes_csv": "results\\final_testing_NEW\\jobs\\no_cost__low__seed2__test_high\\episodes.csv",
+  "episodes_sha256": "bc337da01aec2bdd6164f83ea5f0585ed48e55aec19dbbbf84ffcc7a0a3e0248",
+  "n_episodes": 768,
+  "worker_seconds": 44.112670000000435
+}
